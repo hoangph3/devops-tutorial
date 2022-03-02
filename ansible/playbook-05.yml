@@ -1,0 +1,21 @@
+---
+- hosts: all
+  vars:
+    - user: vagrant
+    - filename: tmp
+  tasks:
+    - name: Check if file already exists
+      command: ls /home/{{ user }}/{{ filename }}
+      register: file_exists
+      ignore_errors: yes
+
+    - name: create file for user
+      file:
+        path: /home/{{ user }}/{{ filename }}
+        state: touch
+      when: file_exists is failed
+
+    - name: show message if file exists
+      debug:
+        msg: The user file already exists.
+      when: file_exists is succeeded
