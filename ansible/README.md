@@ -33,7 +33,7 @@ Use `tasks` to play in
 ansible-playbook -i inventory playbook-01.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
@@ -73,7 +73,7 @@ Use `vars` to defines a list of variables in
 ansible-playbook -i inventory playbook-02.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
@@ -113,7 +113,7 @@ ansible all -i inventory -m setup -a "filter=*ipv4*"
 ansible-playbook -i inventory playbook-03.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
@@ -154,7 +154,7 @@ Use `when` in playbook to run tasks with condition, the variable in the conditio
 ansible-playbook -i inventory playbook-04.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
@@ -217,7 +217,7 @@ We can see clearly with [`playbook-05.yml`](https://github.com/hoangph3/devops-t
 ansible-playbook -i inventory playbook-05.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
@@ -249,7 +249,7 @@ Then, re-run playbook, you'll get a different result because the file is already
 ansible-playbook -i inventory playbook-05.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
@@ -298,7 +298,7 @@ Let see in [`playbook-06.yml`](https://github.com/hoangph3/devops-tutorial/blob/
 ansible-playbook -i inventory playbook-06.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
@@ -335,7 +335,7 @@ With privilege escalation, such as to run a command with extended permissions (e
 ansible-playbook -i inventory playbook-07.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
@@ -357,7 +357,7 @@ To provide privilege escalation password, you can use the following command with
 ansible-playbook -i inventory playbook-07.yml -K
 ```
 
-```json
+```shell
 BECOME password: 
 
 PLAY [all] *********************************************************************
@@ -401,7 +401,7 @@ You can also change which user you want to switch to while executing a task or p
 ansible-playbook -i inventory playbook-08.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
@@ -525,7 +525,7 @@ When installing multiple packages, you can use a `loop` and provide an array con
 ansible-playbook -i inventory playbook-10.yml
 ```
 
-```json
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
