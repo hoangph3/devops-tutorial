@@ -544,3 +544,74 @@ PLAY RECAP *********************************************************************
 192.168.56.10              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 192.168.56.11              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
+
+Templates allow you to create new files on the nodes using predefined models based on the [Jinja2 templating](https://docs.ansible.com/ansible/latest/user_guide/playbooks_templating.html) system. Ansible templates are typically saved as `.tpl` files and support the use of variables, loops, and conditional expressions.
+
+Now we will create new template file called [`landing-page.html.j2`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/files/landing-page.html.j2)
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title> {{ page_title }} </title>
+  <meta name="description" content="Created with Ansible">
+</head>
+<body>
+    <h1> {{ page_title }} </h1>
+    <p> {{ page_description }} </p>
+</body>
+</html>
+```
+
+This template uses two variables that must be provided whenever the template is applied in a playbook: `page_title` and `page_description`. We can see in [`playbook-11.yml`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/playbook-11.yml)
+
+```yaml
+---
+- hosts: all
+  become: yes
+  vars:
+    page_title: Meme Wibu
+    page_description: Wibu is the best.
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Apply Page Template
+      template:
+        src: files/landing-page.html.j2
+        dest: /var/www/html/index.nginx-debian.html
+
+    - name: Allow all access to tcp port 80
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+```
+
+```shell
+ansible-playbook -i inventory playbook-11.yml
+```
+
+On localhost, you can access landing page with server public ip (`192.168.56.10` or `192.168.56.11`)
+
+```shell
+curl 192.168.56.11
+```
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Meme Wibu</title>
+  <meta name="description" content="Created with Ansible">
+</head>
+<body>
+    <h1>Meme Wibu</h1>
+    <p>Wibu is the best.</p>
+</body>
+</html>
+```
