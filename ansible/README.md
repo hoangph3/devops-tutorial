@@ -777,14 +777,12 @@ After all, now we'll use what we have seen so far to create a playbook that auto
 First of all, we create a demo website in [`nginx_demo/resources`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/nginx_demo/resources).
 
 ```shell
-total 28
-drwxr-xr-x 3 ph3 ph3 4096 Jul 29  2021 .
-drwxr-xr-x 3 ph3 ph3 4096 Mar  3 13:04 ..
+total 20
+drwxr-xr-x 3 ph3 ph3 4096 Mar  3 13:42 .
+drwxr-xr-x 4 ph3 ph3 4096 Mar  3 13:31 ..
 -rw-r--r-- 1 ph3 ph3 1441 Jul 29  2021 about.html
 drwxr-xr-x 2 ph3 ph3 4096 Jul 29  2021 images
 -rw-r--r-- 1 ph3 ph3 3165 Jul 29  2021 index.html
--rw-r--r-- 1 ph3 ph3 1079 Jul 29  2021 LICENSE
--rw-r--r-- 1 ph3 ph3  675 Jul 29  2021 README.md
 ```
 
 You'll now set up the Nginx template that is necessary to configure the remote web server in [`files/nginx.conf.j2`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/nginx_demo/files/nginx.conf.j2).
