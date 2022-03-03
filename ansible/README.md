@@ -452,7 +452,7 @@ Let see in [`playbook-09.yml`](https://github.com/hoangph3/devops-tutorial/blob/
 ansible-playbook -i inventory playbook-09.yml
 ```
 
-```
+```shell
 PLAY [all] *********************************************************************
 
 TASK [Gathering Facts] *********************************************************
