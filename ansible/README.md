@@ -4,12 +4,16 @@
 
 Step 1: Create hosts server
 
-    vagrant up
+```shell
+vagrant up
+```
 
 Step 2: Checking connection
 
-    sshpass -p vagrant ssh vagrant@192.168.56.10
-    sshpass -p vagrant ssh vagrant@192.168.56.11
+```shell
+sshpass -p vagrant ssh vagrant@192.168.56.10
+sshpass -p vagrant ssh vagrant@192.168.56.11
+```
 
 ### With ansible-playbook
 
@@ -29,6 +33,26 @@ Use `tasks` to play in
 ansible-playbook -i inventory playbook-01.yml
 ```
 
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Print message] ***********************************************************
+ok: [192.168.56.10] => {
+    "msg": "Hello Ansible"
+}
+ok: [192.168.56.11] => {
+    "msg": "Hello Ansible"
+}
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
 Use `vars` to defines a list of variables in 
 [`playbook-02.yml`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/playbook-02.yml).
 
@@ -41,12 +65,32 @@ Use `vars` to defines a list of variables in
   tasks:
     - name: Print variables
       debug:
-        msg: "Username: {{ username }},
-              Home dir: {{ dir }} "
+        msg: " Username: {{ username }},
+               Home dir: {{ dir }} "
 ```
 
 ```shell
 ansible-playbook -i inventory playbook-02.yml
+```
+
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Print variables] *********************************************************
+ok: [192.168.56.10] => {
+    "msg": "Username: hoang, Home dir: /home/hoang "
+}
+ok: [192.168.56.11] => {
+    "msg": "Username: hoang, Home dir: /home/hoang "
+}
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
 
 To access system information, use `filter` parameter to provide a pattern,
@@ -69,6 +113,26 @@ ansible all -i inventory -m setup -a "filter=*ipv4*"
 ansible-playbook -i inventory playbook-03.yml
 ```
 
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [print facts] *************************************************************
+ok: [192.168.56.10] => {
+    "msg": "IPv4 address: 10.0.2.15"
+}
+ok: [192.168.56.11] => {
+    "msg": "IPv4 address: 10.0.2.15"
+}
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
 Use `when` in playbook to run tasks with condition, the variable in the condition was predefined in `vars` in
 [`playbook-04.yml`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/playbook-04.yml).
 
@@ -88,6 +152,35 @@ Use `when` in playbook to run tasks with condition, the variable in the conditio
 
 ```shell
 ansible-playbook -i inventory playbook-04.yml
+```
+
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [create file for user] ****************************************************
+changed: [192.168.56.11]
+changed: [192.168.56.10]
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+Now we can verify the file was created.
+
+```shell
+sshpass -p vagrant ssh vagrant@192.168.56.10
+cd /home/vagrant/
+ls -l
+```
+
+```shell
+total 0
+-rw-rw-r-- 1 vagrant vagrant 0 Mar  3 16:26 tmp.txt
 ```
 
 Use `register` in playbook to create a new variable and assigns it with the output obtained from a command.
@@ -124,10 +217,64 @@ We can see clearly with [`playbook-05.yml`](https://github.com/hoangph3/devops-t
 ansible-playbook -i inventory playbook-05.yml
 ```
 
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Check if file already exists] ********************************************
+fatal: [192.168.56.11]: FAILED! => {"changed": true, "cmd": ["ls", "/home/vagrant/tmp"], "delta": "0:00:00.004377", "end": "2022-03-03 15:42:05.367117", "msg": "non-zero return code", "rc": 2, "start": "2022-03-03 15:42:05.362740", "stderr": "ls: cannot access '/home/vagrant/tmp': No such file or directory", "stderr_lines": ["ls: cannot access '/home/vagrant/tmp': No such file or directory"], "stdout": "", "stdout_lines": []}
+...ignoring
+fatal: [192.168.56.10]: FAILED! => {"changed": true, "cmd": ["ls", "/home/vagrant/tmp"], "delta": "0:00:00.005670", "end": "2022-03-03 15:42:05.495959", "msg": "non-zero return code", "rc": 2, "start": "2022-03-03 15:42:05.490289", "stderr": "ls: cannot access '/home/vagrant/tmp': No such file or directory", "stderr_lines": ["ls: cannot access '/home/vagrant/tmp': No such file or directory"], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [create file for user] ****************************************************
+changed: [192.168.56.10]
+changed: [192.168.56.11]
+
+TASK [show message if file exists] *********************************************
+skipping: [192.168.56.11]
+skipping: [192.168.56.10]
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=3    changed=2    unreachable=0    failed=0    skipped=1    rescued=0    ignored=1   
+192.168.56.11              : ok=3    changed=2    unreachable=0    failed=0    skipped=1    rescued=0    ignored=1   
+```
+
 Then, re-run playbook, you'll get a different result because the file is already exists.
 
 ```shell
 ansible-playbook -i inventory playbook-05.yml
+```
+
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Check if file already exists] ********************************************
+changed: [192.168.56.11]
+changed: [192.168.56.10]
+
+TASK [create file for user] ****************************************************
+skipping: [192.168.56.10]
+skipping: [192.168.56.11]
+
+TASK [show message if file exists] *********************************************
+ok: [192.168.56.10] => {
+    "msg": "The user file already exists."
+}
+ok: [192.168.56.11] => {
+    "msg": "The user file already exists."
+}
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=3    changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+192.168.56.11              : ok=3    changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
 ```
 
 Use `loop` in playbook to avoid repeating the task several times. By default Ansible sets the loop variable `item` for each loop.
@@ -151,6 +298,26 @@ Let see in [`playbook-06.yml`](https://github.com/hoangph3/devops-tutorial/blob/
 ansible-playbook -i inventory playbook-06.yml
 ```
 
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [creates users files] *****************************************************
+changed: [192.168.56.11] => (item=root)
+changed: [192.168.56.10] => (item=root)
+changed: [192.168.56.10] => (item=hoang)
+changed: [192.168.56.11] => (item=hoang)
+changed: [192.168.56.10] => (item=hanh)
+changed: [192.168.56.11] => (item=hanh)
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
 With privilege escalation, such as to run a command with extended permissions (ex: `sudo`), you'll need to include a `become` directive set to `yes` in
 [`playbook-07.yml`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/playbook-07.yml).
 
@@ -168,10 +335,44 @@ With privilege escalation, such as to run a command with extended permissions (e
 ansible-playbook -i inventory playbook-07.yml
 ```
 
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Update apt cache] ********************************************************
+changed: [192.168.56.10]
+changed: [192.168.56.11]
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
 To provide privilege escalation password, you can use the following command with flag `-K` (--ask-become-pass).
 
 ```shell
 ansible-playbook -i inventory playbook-07.yml -K
+```
+
+```json
+BECOME password: 
+
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Update apt cache] ********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
 
 You can also change which user you want to switch to while executing a task or play. To do that, set the `become_user` directive to the name of the remote user you want to switch to in
@@ -186,13 +387,13 @@ You can also change which user you want to switch to while executing a task or p
   tasks:
     - name: Create root file
       file:
-        path: /tmp/my_file_root
+        path: /tmp/file_of_root
         state: touch
 
     - name: Create {{ user }} file
       become_user: "{{ user }}"
       file:
-        path: /tmp/my_file_{{ user }}
+        path: /tmp/file_of_{{ user }}
         state: touch
 ```
 
@@ -200,14 +401,39 @@ You can also change which user you want to switch to while executing a task or p
 ansible-playbook -i inventory playbook-08.yml
 ```
 
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Create root file] ********************************************************
+changed: [192.168.56.11]
+changed: [192.168.56.10]
+
+TASK [Create vagrant file] *****************************************************
+changed: [192.168.56.10]
+changed: [192.168.56.11]
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
 Now we can verify file ownership information.
 
 ```shell
 sshpass -p vagrant ssh vagrant@192.168.56.10
-ls -la /tmp/my_file*
+ls -la /tmp/file_of_*
 ```
 
-Use `apt` in playbook to install and manage system packages. To install a package, you can set package `state` to `present` or `latest` (default is `present`). When you want to remove a package, you must set the package `state` to `absent`.
+```shell
+-rw-r--r-- 1 root    root    0 Mar  3 16:03 /tmp/file_of_root
+-rw-rw-r-- 1 vagrant vagrant 0 Mar  3 16:03 /tmp/file_of_vagrant
+```
+
+Use `apt` in playbook to install and manage system packages. To install a package, you can set package `state` to `present` or `latest` (default is `present`).
 Let see in [`playbook-09.yml`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/playbook-09.yml).
 
 ```yaml
@@ -224,6 +450,57 @@ Let see in [`playbook-09.yml`](https://github.com/hoangph3/devops-tutorial/blob/
 
 ```shell
 ansible-playbook -i inventory playbook-09.yml
+```
+
+```
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Update apt cache and make sure Vim is installed] *************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+Now we can verify Vim package have installed.
+
+```shell
+sshpass -p vagrant ssh vagrant@192.168.56.11
+vim --version | head -n1
+```
+
+```shell
+VIM - Vi IMproved 8.0 (2016 Sep 12, compiled Jan 20 2022 02:47:53)
+```
+
+When you want to remove a package, you must set the package `state` to `absent`.
+
+```yaml
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Removing Vim package
+      apt:
+        name: vim
+        state: absent
+```
+
+Now we can verify Vim package have removed.
+
+```shell
+sshpass -p vagrant ssh vagrant@192.168.56.11
+vim --version
+```
+
+```shell
+-bash: vim: command not found
 ```
 
 When installing multiple packages, you can use a `loop` and provide an array containing the names of the packages you want to install in
@@ -248,3 +525,22 @@ When installing multiple packages, you can use a `loop` and provide an array con
 ansible-playbook -i inventory playbook-10.yml
 ```
 
+```json
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Update apt cache and make sure Vim, Curl and Unzip are installed] ********
+changed: [192.168.56.10] => (item=vim)
+ok: [192.168.56.10] => (item=curl)
+ok: [192.168.56.10] => (item=unzip)
+changed: [192.168.56.11] => (item=vim)
+ok: [192.168.56.11] => (item=curl)
+ok: [192.168.56.11] => (item=unzip)
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```

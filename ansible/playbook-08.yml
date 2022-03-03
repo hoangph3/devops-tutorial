@@ -6,12 +6,12 @@
   tasks:
     - name: Create root file
       file:
-        path: /tmp/my_file_root
+        path: /tmp/file_of_root
         state: touch
 
     - name: Create {{ user }} file
       become_user: "{{ user }}"
       file:
-        path: /tmp/my_file_{{ user }}
+        path: /tmp/file_of_{{ user }}
         state: touch
 
