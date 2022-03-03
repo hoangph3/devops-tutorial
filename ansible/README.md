@@ -17,6 +17,14 @@ sshpass -p vagrant ssh vagrant@192.168.56.11
 
 ### With ansible-playbook
 
+Creating file [`inventory`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/inventory)
+
+```shell
+[all]
+192.168.56.10 ansible_user=vagrant ansible_ssh_pass=vagrant
+192.168.56.11 ansible_user=vagrant ansible_ssh_pass=vagrant
+```
+
 Use `tasks` to play in 
 [`playbook-01.yml`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/playbook-01.yml).
 
@@ -745,6 +753,10 @@ PLAY RECAP *********************************************************************
 
 If you go to your browser and access the server's IP address now, you'll see the following page:
 
+```shell
+curl 192.168.56.11
+```
+
 ```html
 <!doctype html>
 <html lang="en">
@@ -759,3 +771,95 @@ If you go to your browser and access the server's IP address now, you'll see the
 </body>
 </html>
 ```
+
+After all, now we'll use what we have seen so far to create a playbook that automates setting up a remote Nginx server to host a static HTML website on Ubuntu 20.04.
+
+First of all, we create a demo website in [`nginx_demo/resources`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/nginx_demo/resources).
+
+```shell
+total 28
+drwxr-xr-x 3 ph3 ph3 4096 Jul 29  2021 .
+drwxr-xr-x 3 ph3 ph3 4096 Mar  3 13:04 ..
+-rw-r--r-- 1 ph3 ph3 1441 Jul 29  2021 about.html
+drwxr-xr-x 2 ph3 ph3 4096 Jul 29  2021 images
+-rw-r--r-- 1 ph3 ph3 3165 Jul 29  2021 index.html
+-rw-r--r-- 1 ph3 ph3 1079 Jul 29  2021 LICENSE
+-rw-r--r-- 1 ph3 ph3  675 Jul 29  2021 README.md
+```
+
+You'll now set up the Nginx template that is necessary to configure the remote web server in [`files/nginx.conf.j2`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/nginx_demo/files/nginx.conf.j2).
+
+```php
+server {
+  listen 80;
+
+  root {{ document_root }}/{{ app_root }};
+  index index.html index.htm;
+
+  server_name {{ server_name }};
+  
+  location / {
+   default_type "text/html";
+   try_files $uri.html $uri $uri/ =404;
+  }
+}
+```
+
+This template file contains an Nginx server block configuration for a static HTML website. It uses three variables: `document_root`, `app_root`, and `server_name`. Now we'll define these variables in [`playbook-nginx.yml`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/nginx_demo/playbook-nginx.yml).
+
+```yaml
+---
+- hosts: all
+  become: yes
+  vars:
+    server_name: "{{ ansible_default_ipv4.address }}"
+    document_root: /var/www
+    app_root: resources
+  tasks:
+    - name: Update apt cache and install Nginx
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name: Copy website files to the server's document root
+      copy:
+        src: "{{ app_root }}"
+        dest: "{{ document_root }}"
+        mode: preserve
+
+    - name: Apply Nginx template
+      template:
+        src: files/nginx.conf.j2
+        dest: /etc/nginx/sites-available/default
+      notify: Restart Nginx
+
+    - name: Enable new site
+      file:
+        src: /etc/nginx/sites-available/default
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+      notify: Restart Nginx
+
+    - name: Allow all access to tcp port 80
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+```
+
+```shell
+ansible-playbook -i inventory nginx_demo/playbook-nginx.yml
+```
+
+If you go to your browser and access your server's hostname or IP address you should now see the following page:
+
+![HTML website with Nginx server](nginx_demo/web.png)
+
+Thanks and Best Regards !!!
