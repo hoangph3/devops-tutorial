@@ -615,3 +615,147 @@ curl 192.168.56.11
 </body>
 </html>
 ```
+
+In Ansible, `handlers` are special tasks that only get executed when triggered via the `notify` directive. Handlers are executed at the end of the play, once all `tasks` are finished. So, `handlers` are typically used to start, reload, restart, and stop services. If your playbook involves changing configuration files, there is a high chance that you'll need to restart a service so that the changes take effect.
+
+The following [`playbook-12.yml`](https://github.com/hoangph3/devops-tutorial/blob/main/ansible/playbook-12.yml) replaces the default document root in Nginx’s configuration file using the built-in Ansible module [`replace`](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/replace_module.html). This module looks for patterns in a file based on a regular expression defined by `regexp`, and then replaces any matches found with the content defined by `replace`. The task then sends a notification to the `Restart Nginx` handler for a restart as soon as possible.
+
+```yaml
+---
+- hosts: all
+  become: yes
+  vars:
+    page_title: Master Wibu
+    page_description: No wibu No fun.
+    doc_root: /var/www/wibu
+
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Make sure new doc root exists
+      file:
+        path: "{{ doc_root }}"
+        state: directory
+        mode: '0755'
+
+    - name: Apply Page Template
+      template:
+        src: files/landing-page.html.j2
+        dest: "{{ doc_root }}/index.html"
+
+    - name: Replace document root on default Nginx configuration
+      replace:
+        path: /etc/nginx/sites-available/default
+        regexp: '(\s+)root /var/www/html;(\s+.*)?$'
+        replace: \g<1>root {{ doc_root }};\g<2>
+      notify: Restart Nginx
+
+    - name: Allow all access to tcp port 80
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+```
+
+```shell
+ansible-playbook -i inventory playbook-12.yml
+```
+
+```shell
+
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.10]
+ok: [192.168.56.11]
+
+TASK [Install Nginx] ***********************************************************
+ok: [192.168.56.10]
+ok: [192.168.56.11]
+
+TASK [Make sure new doc root exists] *******************************************
+changed: [192.168.56.10]
+changed: [192.168.56.11]
+
+TASK [Apply Page Template] *****************************************************
+changed: [192.168.56.11]
+changed: [192.168.56.10]
+
+TASK [Replace document root on default Nginx configuration] ********************
+changed: [192.168.56.11]
+changed: [192.168.56.10]
+
+TASK [Allow all access to tcp port 80] *****************************************
+ok: [192.168.56.10]
+ok: [192.168.56.11]
+
+RUNNING HANDLER [Restart Nginx] ************************************************
+changed: [192.168.56.11]
+changed: [192.168.56.10]
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=7    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=7    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+On a fresh installation of Nginx, the document root is located at `/var/www/html`, but we move the location to `/var/www/wibu` by using `replace` if matched pattern in `regexp`. This causes a change in Nginx configuration, so you'll see the `Restart Nginx` handler being executed just before the end of the play.
+
+Now if you re-run playbook, you'll get a different result because the document root was moved to `/var/www/wibu`, not matched pattern in `regexp`. So the `Restart Nginx` not being executed.
+
+```shell
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+TASK [Install Nginx] ***********************************************************
+ok: [192.168.56.10]
+ok: [192.168.56.11]
+
+TASK [Make sure new doc root exists] *******************************************
+ok: [192.168.56.10]
+ok: [192.168.56.11]
+
+TASK [Apply Page Template] *****************************************************
+ok: [192.168.56.10]
+ok: [192.168.56.11]
+
+TASK [Replace document root on default Nginx configuration] ********************
+ok: [192.168.56.10]
+ok: [192.168.56.11]
+
+TASK [Allow all access to tcp port 80] *****************************************
+ok: [192.168.56.11]
+ok: [192.168.56.10]
+
+PLAY RECAP *********************************************************************
+192.168.56.10              : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.56.11              : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+If you go to your browser and access the server's IP address now, you'll see the following page:
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Master Wibu</title>
+  <meta name="description" content="Created with Ansible">
+</head>
+<body>
+    <h1>Master Wibu</h1>
+    <p>No wibu No fun.</p>
+</body>
+</html>
+```
