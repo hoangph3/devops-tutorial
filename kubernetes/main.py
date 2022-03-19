@@ -11,7 +11,7 @@ def hello_world():
 @app.route('/widgets')
 def get_widgets():
   mydb = mysql.connector.connect(
-    host="mysql-service", # host is service's name that connected to mysql deployment, you can see in webapp.yaml
+    host="mysql-service", # host is service's name that connected to mysql deployment, you can see in mysql.yaml
     user="root",
     password="p@ssw0rd1",
     database="inventory"
@@ -35,7 +35,7 @@ def get_widgets():
 @app.route('/initdb')
 def db_init():
   mydb = mysql.connector.connect(
-    host="mysql-service", # host is service's name that connected to mysql deployment, you can see in webapp.yaml
+    host="mysql-service", # host is service's name that connected to mysql deployment, you can see in mysql.yaml
     user="root",
     password="p@ssw0rd1"
   )
@@ -46,7 +46,7 @@ def db_init():
   cursor.close()
 
   mydb = mysql.connector.connect(
-    host="mysql-service", # host is service's name that connected to mysql deployment, you can see in webapp.yaml
+    host="mysql-service", # host is service's name that connected to mysql deployment, you can see in mysql.yaml
     user="root",
     password="p@ssw0rd1",
     database="inventory"
