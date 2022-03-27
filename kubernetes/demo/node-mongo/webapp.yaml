@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: webapp
-        image: mongo-demo-k8s:latest
+        image: mongo-demo-k8s:1.0
         imagePullPolicy: Never
         ports:
         - containerPort: 3000

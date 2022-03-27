@@ -16,9 +16,9 @@ Step 1: Moving docker environment to kubernetes
 
 Step 2: Build python app image
 
-    docker build -t mongo-demo-k8s .
+    docker build -t mongo-demo-k8s:1.0 .
 
-Step 3: Create deployment and service    
+Step 3: Create deployment and service
 
     kubectl apply -f mongo-config.yaml
     kubectl apply -f mongo-secret.yaml

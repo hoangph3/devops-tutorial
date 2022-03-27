@@ -1,3 +1,4 @@
+# docker build -t mongo-demo-k8s:1.0 .
 FROM node:13-alpine
 
 ENV MONGO_DB_USERNAME=admin \
