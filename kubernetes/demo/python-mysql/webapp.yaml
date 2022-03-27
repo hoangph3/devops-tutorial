@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: webapp
-        image: python-docker-dev:latest
-        imagePullPolicy: IfNotPresent
+        image: python-demo-k8s:1.0
+        imagePullPolicy: Never
         ports:
         - containerPort: 9000
 

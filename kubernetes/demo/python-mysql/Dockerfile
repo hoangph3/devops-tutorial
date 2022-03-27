@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# docker built -t python-demo-k8s:1.0 .
 
 FROM python:3.8-slim-buster
 
