@@ -1,0 +1,28 @@
+hosts = {
+    "master" => "192.168.56.10",
+    "worker-1" => "192.168.56.11",
+    "worker-2" => "192.168.56.12"
+}
+
+Vagrant.configure("2") do |config|
+
+    config.ssh.insert_key = true
+    config.ssh.forward_agent = true
+
+    config.vm.box = "bento/ubuntu-16.04"
+
+    hosts.each do |name, ip|
+        config.vm.define name do |machine|
+            machine.vm.hostname = name
+            machine.vm.network :private_network, ip: ip
+            machine.vm.provider "virtualbox" do |v|
+                v.name = name
+                v.memory = 1024
+                v.cpus = 2
+            # keep swapoff everytime
+            machine.vm.provision "shell", inline: "swapoff -a"
+            machine.vm.provision "shell", inline: "sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab"
+            end
+        end
+    end
+end
