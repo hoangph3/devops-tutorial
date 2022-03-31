@@ -128,7 +128,7 @@ nginx-deployment-74d589986c-75xqx   1/1     Running   0          47s
 nginx-deployment-74d589986c-lrgq5   1/1     Running   0          47s
 ```
 
-- Access application from external service (local machine): `curl <workerIP>:<nodePort>`
+- Access application from external service: `curl <workerIP>:<nodePort>`
 
 ```sh
 curl 192.168.56.11:32000
