@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+data:
+  mysql.conf: |
+    [mysqld]
+    port=3306
+    socket=/tmp/mysql.sock
+    key_buffer_size=16M
+    max_allowed_packet=128M
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+type: Opaque
+data:
+  secret.file: |
+    U3VwM3JfczNjdXJlX0YxYWdnZ2dnZ2dnZ2chXl4=
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-db
+  labels:
+    app: my-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-db
+  template:
+    metadata:
+      labels:
+        app: my-db
+    spec:
+      containers:
+      - name: my-db
+        image: busybox
+        command: [ "/bin/sh", "-c", "cat /mysql/db-config/mysql.conf; cat /mysql/db-secret/secret.file" ]
+
+        volumeMounts:
+        - name: db-config
+          mountPath: /mysql/db-config
+        - name: db-secret
+          mountPath: /mysql/db-secret
+          readOnly: true
+
+      volumes:
+        - name: db-config
+          configMap:
+            # Provide the name of the ConfigMap containing the files you want
+            # to add to the container
+            name: mysql-config
+        - name: db-secret
+          secret:
+            secretName: mysql-secret
