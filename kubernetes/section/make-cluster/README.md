@@ -2,10 +2,10 @@
 
 ### Starting Virtual Machine
 
-Step 1: Create master and worker server
+Step 1: Create master and worker server (--provision flag to run script when startup)
 
 ```sh
-vagrant up
+vagrant up --provision
 ```
 
 Step 2: Checking connection
