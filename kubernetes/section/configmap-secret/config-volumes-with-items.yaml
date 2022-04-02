@@ -55,9 +55,15 @@ spec:
       volumes:
         - name: db-config
           configMap:
-            # Provide the name of the ConfigMap containing the files you want
-            # to add to the container
             name: mysql-config
+            items:
+              - key: test.conf
+                path: test.conf
+              - key: secure-flag
+                path: flag.txt
         - name: db-secret
           secret:
             secretName: mysql-secret
+            items:
+              - key: secret.file
+                path: flag.txt

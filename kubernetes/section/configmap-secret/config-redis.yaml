@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-redis-config
+data:
+  redis-config: |
+    maxmemory 2mb
+    maxmemory-policy allkeys-lru
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-redis
+  labels:
+    app: my-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-redis
+  template:
+    metadata:
+      labels:
+        app: my-redis
+    spec:
+      containers:
+        - name: my-redis
+          image: redis
+          command:
+            - redis-server
+            - "/redis-master/redis.conf"
+          env:
+          - name: MASTER
+            value: "true"
+          ports:
+          - containerPort: 6379
+          resources:
+            limits:
+              cpu: "0.1"
+
+          volumeMounts:
+          - mountPath: /redis-master-data
+            name: data
+          - mountPath: /redis-master
+            name: config
+
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: example-redis-config
+            items:
+            - key: redis-config
+              path: redis.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-redis-service
+spec:
+  type: NodePort
+  selector:
+    app: my-redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+      nodePort: 30100
