@@ -169,18 +169,26 @@ NAME                        READY   STATUS    RESTARTS   AGE
 my-redis-6496f6bbf8-nsgjk   1/1     Running   0          40s
 ```
 
-Access redis server to get data:
+Access redis server to get config and data:
 
 ```sh
 kubectl exec -it my-redis-6496f6bbf8-nsgjk -- redis-cli
 ```
 
 ```
+127.0.0.1:6379> CONFIG GET maxmemory
+1) "maxmemory"
+2) "2097152"
+
+127.0.0.1:6379> CONFIG GET maxmemory-policy
+1) "maxmemory-policy"
+2) "allkeys-lru"
+
 127.0.0.1:6379> keys *
 (empty array)
 ```
 
-Now we will create python script to communicate with redis server:
+Now we will create python script `test_redis.py` to communicate with redis server:
 
 ```python
 # test_redis.py
@@ -196,12 +204,14 @@ r.rpush('foo', 'bar2')
 Access redis server to get data after run python script:
 
 ```sh
+python3 test_redis.py
 kubectl exec -it my-redis-6496f6bbf8-nsgjk -- redis-cli
 ```
 
 ```
 127.0.0.1:6379> keys *
 1) "foo"
+
 127.0.0.1:6379> lrange foo 0 -1
 1) "bar"
 2) "bar2"
