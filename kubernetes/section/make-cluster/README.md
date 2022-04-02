@@ -42,7 +42,9 @@ Step 4: Explore cluster
 sshpass -p vagrant ssh vagrant@192.168.56.10
 kubectl get nodes
 kubectl get po -n kube-system
+```
 
+```
 NAME       STATUS   ROLES                  AGE     VERSION
 master     Ready    control-plane,master   34m     v1.23.0
 worker-1   Ready    <none>                 5m36s   v1.23.0
@@ -118,7 +120,9 @@ kubectl apply -f demo-nginx.yaml
 
 ```sh
 kubectl get pods
+```
 
+```
 NAME                                READY   STATUS    RESTARTS   AGE
 nginx-deployment-74d589986c-75xqx   1/1     Running   0          47s
 nginx-deployment-74d589986c-lrgq5   1/1     Running   0          47s
