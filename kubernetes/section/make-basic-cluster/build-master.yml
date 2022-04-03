@@ -1,0 +1,28 @@
+- hosts: master
+  become_user: vagrant
+  tasks:
+    - name: pull kube image
+      shell: sudo kubeadm config images pull --kubernetes-version v1.23.0
+      args:
+        chdir: $HOME
+
+    - name: initialize the cluster
+      shell: sudo kubeadm init --apiserver-advertise-address=192.168.56.10 --pod-network-cidr=10.244.0.0/16 --node-name=master --ignore-preflight-errors=all >> init_cluster.txt
+      args:
+        chdir: $HOME
+
+    - name: create .kube directory
+      shell: |
+        mkdir -p $HOME/.kube
+        sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+    - name: download network plugin
+      get_url:
+        url: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+        dest: $HOME
+
+    - name: install pod network
+      shell: sudo kubectl apply -f kube-flannel.yml
+      args:
+        chdir: $HOME
