@@ -14,6 +14,6 @@
   become_user: vagrant
   tasks:
     - name: join worker to cluster
-      shell: sudo {{ hostvars['master'].join_command }} >> join_worker.txt
+      shell: sudo {{ hostvars['master'].join_command }} > join_worker.txt
       args:
         chdir: $HOME

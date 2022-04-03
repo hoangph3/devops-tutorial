@@ -7,7 +7,7 @@
         chdir: $HOME
 
     - name: initialize the cluster
-      shell: sudo kubeadm init --apiserver-advertise-address=192.168.56.10 --pod-network-cidr=10.244.0.0/16 --node-name=master --ignore-preflight-errors=all >> init_cluster.txt
+      shell: sudo kubeadm init --apiserver-advertise-address=192.168.56.10 --pod-network-cidr=10.244.0.0/16 --node-name=master --ignore-preflight-errors=all > init_cluster.txt
       args:
         chdir: $HOME
 
