@@ -1,0 +1,38 @@
+- hosts: loadbalancer
+  become: yes
+  tasks:
+   - name: install haproxy
+     apt:
+       name: haproxy
+       state: present
+       update_cache: true
+
+   - name: add mappings to /etc/hosts
+     blockinfile:
+       path: /etc/hosts
+       block: |
+         192.168.56.10 master-1
+         192.168.56.11 master-2
+         192.168.56.12 worker-1
+         192.168.56.13 worker-2
+         192.168.56.14 load-balancer
+
+   - name: config haproxy
+     blockinfile:
+       path: /etc/haproxy/haproxy.cfg
+       block: |
+          frontend kubernetes
+                  bind 192.168.56.14:6443
+                  option tcplog
+                  mode tcp
+                  default_backend kubernetes-master-nodes
+
+          backend kubernetes-master-nodes
+                  mode tcp
+                  balance roundrobin
+                  option tcp-check
+                  server master-1 192.168.56.10:6443 check fall 3 rise 2
+                  server master-2 192.168.56.11:6443 check fall 3 rise 2
+
+   - name: restart service
+     shell: systemctl restart haproxy

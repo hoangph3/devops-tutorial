@@ -1,0 +1,110 @@
+- hosts: masters:workers
+  become: yes
+  tasks:
+   - name: install docker
+     apt:
+       name: docker.io
+       state: present
+       update_cache: true
+
+   - name: config run docker as non-root
+     user:
+       name: vagrant
+       groups: docker
+       append: yes
+
+   - name: reset ssh connection to allow user changes
+     meta: reset_connection
+
+   - name: remove old file
+     file:
+       path: /etc/docker/daemon.json
+       state: absent
+
+   - name: config cgroupd docker by systemd
+     blockinfile:
+       path: /etc/docker/daemon.json
+       block: |
+        {
+          "exec-opts": ["native.cgroupdriver=systemd"],
+          "log-driver": "json-file",
+          "log-opts": {
+            "max-size": "100m"
+          },
+          "storage-driver": "overlay2"
+        }
+       marker: ""
+       create: true
+
+   - name: enable iptables bridged traffic
+     blockinfile:
+       path: /etc/sysctl.d/k8s.conf
+       block: |
+        net.bridge.bridge-nf-call-ip6tables = 1
+        net.bridge.bridge-nf-call-iptables = 1
+        net.ipv4.ip_forward = 1
+       create: true
+
+   - name: config modules-load
+     blockinfile:
+       path: /etc/modules-load.d/k8s.conf
+       block: |
+        overlay
+        br_netfilter
+       create: true
+
+   - name: add mappings to /etc/hosts
+     blockinfile:
+       path: /etc/hosts
+       block: |
+         192.168.56.10 master-1
+         192.168.56.11 master-2
+         192.168.56.12 worker-1
+         192.168.56.13 worker-2
+         192.168.56.14 load-balancer
+
+   - name: install apt dependencies
+     apt:
+       name: "{{ item }}"
+       state: present
+       update_cache: true
+     loop:
+       - curl
+       - apt-transport-https
+       - ca-certificates
+       - software-properties-common
+
+   - name: download kubernetes apt-key
+     get_url:
+       url: http://packages.cloud.google.com/apt/doc/apt-key.gpg
+       dest: /home/vagrant/
+
+   - name: add kubernetes apt-key
+     shell: apt-key add apt-key.gpg
+     args:
+       chdir: /home/vagrant/
+
+   - name: update ca certificates
+     shell: update-ca-certificates
+
+   - name: add kubernetes apt repository
+     shell: sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+
+   - name: install kubelet, kubeadm, kubectl
+     apt:
+       name: "{{ item }}"
+       state: present
+       update_cache: true
+       allow_downgrade: yes
+     loop:
+       - kubelet=1.23.0-00
+       - kubeadm=1.23.0-00
+       - kubectl=1.23.0-00
+
+   - name: restart service
+     shell: |
+       sysctl --system
+       systemctl enable docker
+       systemctl daemon-reload
+       systemctl restart docker
+       systemctl enable kubelet
