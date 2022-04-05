@@ -7,8 +7,8 @@
 *.mp4
 
 # secret
-*.csr
-*.pem
+**/*.csr
+**/*.pem
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
