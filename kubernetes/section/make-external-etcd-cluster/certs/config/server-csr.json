@@ -1,0 +1,25 @@
+{
+  "CN": "kubernetes",
+  "hosts": [
+    "127.0.0.1",
+    "192.168.56.11",
+    "192.168.56.12",
+    "192.168.56.15",
+    "kubernetes",
+    "kubernetes.default",
+    "kubernetes.default.svc",
+    "kubernetes.default.svc.cluster",
+    "kubernetes.default.svc.cluster.local"
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [{
+    "C": "VN",
+    "ST": "Hanoi",
+    "L": "Hanoi",
+    "O": "Viettel",
+    "OU": "VCS"
+  }]
+}

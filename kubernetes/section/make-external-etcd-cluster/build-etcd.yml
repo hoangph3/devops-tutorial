@@ -1,0 +1,105 @@
+- hosts: masters
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: copy the certificate from client
+      copy: 
+        src: "{{ item }}"
+        dest: /home/vagrant
+        remote_src: no
+      with_fileglob:
+        - "certs/*.pem"
+
+    - name: download etcd binaries
+      get_url:
+         url: https://github.com/etcd-io/etcd/releases/download/v3.5.2/etcd-v3.5.2-linux-amd64.tar.gz
+         dest: /home/vagrant
+
+    - name: extract the etcd archive
+      shell: tar -xzf etcd-v3.5.2-linux-amd64.tar.gz
+      args:
+        chdir: /home/vagrant
+
+    - name: copy the etcd binaries to /usr/local/bin
+      copy:
+        src: "/home/vagrant/etcd-v3.5.2-linux-amd64/{{ item }}"
+        dest: /usr/local/bin
+        remote_src: yes
+        mode: 0755
+      loop:
+        - etcd
+        - etcdctl
+        - etcdutl
+
+    - name: remove old etcd binaries
+      file:
+        path: /home/vagrant/etcd-v3.5.2-linux-amd64/
+        state: absent
+
+    - name: create config directory for etcd
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - /etc/etcd
+        - /var/lib/etcd
+
+    - name: get list certificate
+      find:
+        paths: "/home/vagrant"
+        file_type: file
+        patterns: '*.pem'
+      register: cert_list
+
+    - name: copy certificate to /etc/etcd
+      copy:
+        src: "{{ item.path }}"
+        dest: /etc/etcd
+        remote_src: yes
+      with_items: "{{ cert_list.files }}"
+
+    - name: create etcd systemd service unit file
+      blockinfile:
+        path: /etc/systemd/system/etcd.service
+        block: |
+          [Unit]
+          Description=etcd
+          Documentation=https://github.com/etcd-io/etcd
+
+          [Service]
+          ExecStart=/usr/local/bin/etcd \
+            --name "{{ inventory_hostname }}" \
+            --cert-file=/etc/etcd/server.pem \
+            --key-file=/etc/etcd/server-key.pem \
+            --peer-cert-file=/etc/etcd/server.pem \
+            --peer-key-file=/etc/etcd/server-key.pem \
+            --trusted-ca-file=/etc/etcd/ca.pem \
+            --peer-trusted-ca-file=/etc/etcd/ca.pem \
+            --peer-client-cert-auth \
+            --client-cert-auth \
+            --initial-advertise-peer-urls "https://{{ ansible_host }}:2380" \
+            --listen-peer-urls "https://{{ ansible_host }}:2380" \
+            --advertise-client-urls "https://{{ ansible_host }}:2379" \
+            --listen-client-urls "https://{{ ansible_host }}:2379" \
+            --initial-cluster master-1=https://192.168.56.11:2380,master-2=https://192.168.56.12:2380 \
+            --initial-cluster-token mytoken \
+            --initial-cluster-state new \
+            --data-dir=/var/lib/etcd
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+        create: true
+
+    - name: start etcd service
+      shell: |
+        systemctl daemon-reload
+        systemctl enable etcd
+        systemctl start etcd
+        etcdctl --endpoints "{{ ansible_host }}:2379" --cacert /etc/etcd/ca.pem --cert=/etc/etcd/server.pem --key /etc/etcd/server-key.pem member list -w table
+      register: log_etcd_raw
+
+    - name: print etcd status cluster
+      debug:
+        msg: "{{ log_etcd_raw.stdout_lines }}"
