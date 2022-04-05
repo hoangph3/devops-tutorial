@@ -2,6 +2,14 @@
 .vagrant
 .idea
 
+# media
+*.pdf
+*.mp4
+
+# secret
+*.csr
+*.pem
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
