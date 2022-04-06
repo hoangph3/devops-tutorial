@@ -183,7 +183,7 @@ NAME         TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
 my-service   NodePort   10.97.225.53   <none>        80:30991/TCP   20s
 ```
 
-Now, use the external IP address (http://<minikube-ip>:<port>) to access the nginx application:
+Now, use the external IP address (`http://<minikube-ip>:<port>`) to access the nginx application:
 
 ```sh
 curl http://192.168.49.2:30991
