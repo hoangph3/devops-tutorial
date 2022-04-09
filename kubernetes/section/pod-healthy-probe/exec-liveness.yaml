@@ -1,0 +1,22 @@
+# exec-liveness.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-exec
+spec:
+  containers:
+  - name: liveness
+    image: busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
+    livenessProbe:
+      exec: # the kubelet executes the command to perform a probe
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5 # perform a liveness probe every 5 seconds
+      periodSeconds: 5 # wait 5 seconds before performing the first probe
