@@ -1,0 +1,23 @@
+# cron-job.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cronjob-every-minute
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cronjob-every-minute
+        spec:
+          containers:
+          - name: cronjob-every-minute
+            image: busybox
+            command: ['sh', '-c']
+            args: 
+            - echo "$(date) Job starting";
+              sleep 30;
+              echo "$(date) Finished succesfully";
+          restartPolicy: OnFailure

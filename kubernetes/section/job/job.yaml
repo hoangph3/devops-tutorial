@@ -1,0 +1,20 @@
+# job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: my-job
+    spec:
+      containers:
+      - name: my-job
+        image: busybox
+        command: ['sh', '-c']
+        args: 
+        - echo "$(date) Job starting";
+          sleep 30;
+          echo "$(date) Finished succesfully";
+      restartPolicy: OnFailure

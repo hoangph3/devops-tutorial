@@ -1,0 +1,22 @@
+# batch-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-job
+spec:
+  completions: 5  # this job must ensure 5 pods complete successfully
+  parallelism: 2  # up to 2 pods can run in parallel
+  template:
+    metadata:
+      labels:
+        app: my-job
+    spec:
+      containers:
+      - name: my-job
+        image: busybox
+        command: ['sh', '-c']
+        args: 
+        - echo "$(date) Job starting";
+          sleep 30;
+          echo "$(date) Finished succesfully";
+      restartPolicy: OnFailure
