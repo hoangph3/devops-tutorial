@@ -194,11 +194,19 @@ Now we will create python script `test_redis.py` to communicate with redis serve
 # test_redis.py
 import redis
 
-r = redis.Redis(host="192.168.49.2",
+r = redis.Redis(host="192.168.49.2", # host is url that kubernetes control plane is running.
                 port="30100",
                 db=0)
 r.rpush('foo', 'bar')
 r.rpush('foo', 'bar2')
+```
+
+Note that host argument is the url that kubernetes control plane is running. In this case, we use minikube and the url can find by the command `minikube ip` or `kubectl cluster-info`:
+
+```
+Kubernetes control plane is running at https://192.168.49.2:8443
+CoreDNS is running at https://192.168.49.2:8443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 ```
 
 Access redis server to get data after run python script:
