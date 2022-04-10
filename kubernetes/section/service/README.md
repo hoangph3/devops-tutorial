@@ -257,3 +257,57 @@ curl -k -v https://kubia.example.com/kubia
 You've hit kubia-deployment-7b895464d7-h8448
 * Connection #0 to host kubia.example.com left intact
 ```
+
+### Configure headless service
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubia-headless
+spec:
+  selector:
+    app: kubia
+  clusterIP: None
+  ports:
+  - port: 80
+    targetPort: 8080
+```
+
+A headless service is a service with a service IP but instead of load-balancing it will return the IPs of our associated Pods. This allows us to interact directly with the Pods instead of a proxy.
+
+Let's list of service:
+
+```sh
+kubectl get service
+```
+
+```
+NAME                     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+kubernetes               ClusterIP   10.96.0.1      <none>        443/TCP    73d
+kubia-headless           ClusterIP   None           <none>        80/TCP     33m
+kubia-internal-service   ClusterIP   10.96.220.32   <none>        8080/TCP   3h1m
+```
+
+Because headless service is connected to Pod's IPs without proxy. If we exec to the pod, we can interact with headless service:
+
+```sh
+kubectl get pods
+```
+
+```
+NAME                                READY   STATUS    RESTARTS   AGE
+kubia-deployment-7b895464d7-h8448   1/1     Running   0          3h5m
+```
+
+```sh
+kubectl exec -it kubia-deployment-7b895464d7-h8448 -- bash
+```
+
+```
+root@kubia-deployment-7b895464d7-h8448:/# curl kubia-headless:8080
+You've hit kubia-deployment-7b895464d7-h8448
+
+root@kubia-deployment-7b895464d7-h8448:/# curl kubia-internal-service:8080
+
+```
