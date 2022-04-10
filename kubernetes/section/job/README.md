@@ -184,4 +184,6 @@ Sat Apr  9 16:32:04 UTC 2022 Job starting
 Sat Apr  9 16:32:34 UTC 2022 Finished succesfully
 ```
 
-Access to https://crontab.guru/ to get more info about cronjob schedule.
+The `.spec.successfulJobsHistoryLimit` and `.spec.failedJobsHistoryLimit` fields are optional. These fields specify how many completed and failed jobs should be kept. By default, they are set to 3 and 1 respectively.
+
+Access to https://crontab.guru/ to get more info about cronjob schedule expressions.
