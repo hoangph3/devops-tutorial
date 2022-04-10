@@ -211,7 +211,11 @@ NAME                CLASS   HOSTS               ADDRESS     PORTS     AGE
 tls-kubia-ingress   nginx   kubia.example.com   localhost   80, 443   17s
 ```
 
-We can see the PORTS is 80, 443. Let's use HTTPS to access your service through the Ingress: `curl -k -v https://kubia.example.com/kubia`
+We can see the PORTS is 80, 443. Let's use HTTPS to access your service through the Ingress: 
+
+```sh
+curl -k -v https://kubia.example.com/kubia
+```
 
 ```
 *   Trying 192.168.49.2:443...
