@@ -319,10 +319,10 @@ We are now going to bind Role/ClusterRole to users by `role-binding.yaml` as bel
 
 ```
 dev:
-  Edit on namespace "my-app-dev"
-  View on namespace "my-app-prod"
+  edit on namespace "my-app-dev"
+  view on namespace "my-app-prod"
 test:
-  Edit on namespace "my-app-prod"
+  edit on namespace "my-app-prod"
 ```
 
 ```yaml
