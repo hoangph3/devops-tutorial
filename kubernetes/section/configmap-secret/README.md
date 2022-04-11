@@ -224,3 +224,42 @@ kubectl exec -it my-redis-6496f6bbf8-nsgjk -- redis-cli
 1) "bar"
 2) "bar2"
 ```
+
+### Pass credentials for the Docker registry with Secret
+
+First, creat a Secret holding the credentials for authenticating with a Docker registry:
+
+```
+kubectl create secret docker-registry mydockerhubsecret --docker-username=hoangph3 --docker-password=mypassword --docker-email=hoangph3@example.com
+```
+
+Let's run pod with private image:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: private-pod
+spec:
+  imagePullSecrets:
+  - name: mydockerhubsecret
+  containers:
+  - image: hoangph3/python-docker:v1.0
+    name: myapp
+```
+
+```sh
+kubectl apply -f secret-private-image.yaml
+kubectl describe pod private-pod
+```
+
+```
+Events:
+  Type     Reason     Age               From               Message
+  ----     ------     ----              ----               -------
+  Normal   Scheduled  63s               default-scheduler  Successfully assigned default/private-pod to minikube
+  Normal   Pulling    62s               kubelet            Pulling image "hoangph3/python-docker:v1.0"
+  Normal   Pulled     46s               kubelet            Successfully pulled image "hoangph3/python-docker:v1.0" in 16.430969904s
+  Normal   Created    2s (x4 over 45s)  kubelet            Created container myapp
+  Normal   Started    2s (x4 over 45s)  kubelet            Started container myapp
+```
