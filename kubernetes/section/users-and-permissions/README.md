@@ -378,7 +378,7 @@ Let’s check if our users have the right permissions.
 ```
 User: test (edit on "my-app-prod" namespace)
   - can create deployments, list pods on "my-app-prod"
-  - can't list pods, deployments on "my-app-dev"
+  - can't create or list pods, deployments on "my-app-dev"
 ```
 
 ```
