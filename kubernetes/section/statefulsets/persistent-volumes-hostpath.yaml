@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-a
+spec:
+  capacity:
+    storage: 1Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /tmp/pv-a
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-b
+spec:
+  capacity:
+    storage: 1Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /tmp/pv-b
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-c
+spec:
+  capacity:
+    storage: 1Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /tmp/pv-c
