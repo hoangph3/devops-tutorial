@@ -434,3 +434,149 @@ pod "nginx" deleted
 └─$ kubectl get pods -n my-app-dev
 No resources found in my-app-dev namespace.
 ```
+
+### Configure ServiceAccount to pull private image
+
+Create service account with imagePullSecrets by `sa-image-pull-secrets.yaml`:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sa-docker-registry
+imagePullSecrets:
+- name: mydockerhubsecret
+```
+
+Now, you can inspect the ServiceAccount with the describe command:
+
+```sh
+kubectl describe sa sa-docker-registry
+```
+
+```
+Name:                sa-docker-registry
+Namespace:           default
+Labels:              <none>
+Annotations:         <none>
+Image pull secrets:  mydockerhubsecret
+Mountable secrets:   sa-docker-registry-token-bcbmg
+Tokens:              sa-docker-registry-token-bcbmg
+Events:              <none>
+```
+
+You can see that a custom token Secret has been created and associated with the ServiceAccount.
+
+Let's inspect the secret `sa-docker-registry-token-bcbmg`:
+
+```sh
+kubectl describe secret sa-docker-registry-token-bcbmg
+```
+
+```
+Name:         sa-docker-registry-token-bcbmg
+Namespace:    default
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: sa-docker-registry
+              kubernetes.io/service-account.uid: 643bb848-6f9f-4f4e-a087-0ce61fec527f
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+ca.crt:     1111 bytes
+namespace:  7 bytes
+token:      eyJhbGciOiJSUzI1NiIs...
+```
+
+To assign a ServiceAccount to a pod, we will set the name of the ServiceAccount in the `spec.serviceAccountName` field in the pod definition:
+
+This is `busybox-sa.yaml` without service account:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+spec:
+  containers:
+  - name: busybox
+    image: hoangph3/busybox
+    command: ['sh', '-c']
+    args: 
+    - echo "$(date) Hello Kubernetes !";
+      sleep 9999999;
+```
+
+```sh
+kubectl apply -f busybox-sa.yaml
+kubectl get pods
+kubectl describe pod busybox
+```
+
+```
+NAME      READY   STATUS         RESTARTS   AGE
+busybox   0/1     ErrImagePull   0          7s
+
+Events:
+  Type     Reason     Age   From               Message
+  ----     ------     ----  ----               -------
+  Normal   Scheduled  16s   default-scheduler  Successfully assigned default/busybox to minikube
+  Normal   Pulling    15s   kubelet            Pulling image "hoangph3/busybox"
+  Warning  Failed     11s   kubelet            Failed to pull image "hoangph3/busybox": rpc error: code = Unknown desc = Error response from daemon: pull access denied for hoangph3/busybox, repository does not exist or may require 'docker login': denied: requested access to the resource is denied
+  Warning  Failed     11s   kubelet            Error: ErrImagePull
+  Normal   BackOff    11s   kubelet            Back-off pulling image "hoangph3/busybox"
+  Warning  Failed     11s   kubelet            Error: ImagePullBackOff
+```
+
+This is `busybox-sa.yaml` with service account:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+spec:
+  serviceAccountName: sa-docker-registry
+  containers:
+  - name: busybox
+    image: hoangph3/busybox
+    command: ['sh', '-c']
+    args: 
+    - echo "$(date) Hello Kubernetes !";
+      sleep 9999999;
+```
+
+```sh
+kubectl apply -f busybox-sa.yaml
+kubectl get pods
+kubectl describe pod busybox
+kubectl logs -f busybox
+```
+
+```
+NAME      READY   STATUS    RESTARTS   AGE
+busybox   1/1     Running   0          20s
+
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  15s   default-scheduler  Successfully assigned default/busybox to minikube
+  Normal  Pulling    14s   kubelet            Pulling image "hoangph3/busybox"
+  Normal  Pulled     10s   kubelet            Successfully pulled image "hoangph3/busybox" in 3.227788488s
+  Normal  Created    10s   kubelet            Created container busybox
+  Normal  Started    10s   kubelet            Started container busybox
+
+Wed Apr 13 16:31:10 UTC 2022 Hello Kubernetes !
+```
+
+The custom ServiceAccount's token is mounted into the container, you can confirm by exec command:
+
+```
+$ kubectl exec -it busybox -- sh                                              
+/ # cd /var/run/secrets/kubernetes.io/serviceaccount/
+/var/run/secrets/kubernetes.io/serviceaccount # ls
+ca.crt     namespace  token
+/var/run/secrets/kubernetes.io/serviceaccount # cat token 
+eyJhbGciOiJSUzI1NiIs...
+```

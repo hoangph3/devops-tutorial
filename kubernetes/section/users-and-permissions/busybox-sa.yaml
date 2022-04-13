@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+spec:
+  serviceAccountName: sa-docker-registry
+  containers:
+  - name: busybox
+    image: hoangph3/busybox
+    command: ['sh', '-c']
+    args: 
+    - echo "$(date) Hello Kubernetes !";
+      sleep 999999;
