@@ -580,3 +580,303 @@ ca.crt     namespace  token
 /var/run/secrets/kubernetes.io/serviceaccount # cat token 
 eyJhbGciOiJSUzI1NiIs...
 ```
+
+### Connect to cluster with ServiceAccount Token
+
+When we create the service account, we will get the CA certificate, namespace, and token. We will use this information to connect to cluster.
+
+First build a docker image with Dockerfile:
+
+```sh
+FROM python:3.8-slim-buster
+RUN apt -y update && apt -y install curl telnet nano && curl -L -O https://dl.k8s.io/v1.23.5/kubernetes-client-linux-amd64.tar.gz && tar zvxf kubernetes-client-linux-amd64.tar.gz kubernetes/client/bin/kubectl && mv kubernetes/client/bin/kubectl / && rm -rf kubernetes && rm -f kubernetes-client-linux-amd64.tar.gz
+CMD ["sleep", "9999999"]
+```
+
+Build image:
+
+```sh
+docker build -t hoangph3/kubectl-client .
+```
+
+```
+$ docker images
+
+REPOSITORY                                TAG               IMAGE ID       CREATED          SIZE
+hoangph3/kubectl-client                   latest            535bed2a335c   6 seconds ago    185MB
+hoangph3/kubectl-proxy                    latest            9a536cb8b202   36 minutes ago   184MB
+redis                                     latest            bba24acba395   2 weeks ago      113MB
+nginx                                     latest            12766a6745ee   2 weeks ago      142MB
+curlimages/curl                           latest            375c62ad3696   2 weeks ago      8.3MB
+```
+
+Now, we are going to create one pod in namespace `foo` and the other one in namespace `bar`:
+
+```sh
+$ kubectl create ns foo 
+namespace/foo created
+
+$ kubectl run test --image=hoangph3/kubectl-client --image-pull-policy=Never -n foo
+pod/test created
+
+$ kubectl create ns bar
+namespace/bar created
+
+$ kubectl run test --image=hoangph3/kubectl-client --image-pull-policy=Never -n bar 
+pod/test created
+```
+
+Now we will use `kubectl exec` to run a shell inside each of the two pods (one in each terminal):
+
+```sh
+kubectl exec -it test -n foo -- bash
+
+root@test:/# env
+KUBERNETES_SERVICE_PORT_HTTPS=443
+KUBERNETES_SERVICE_PORT=443
+HOSTNAME=test
+PYTHON_VERSION=3.8.12
+PWD=/
+PYTHON_SETUPTOOLS_VERSION=57.5.0
+HOME=/root
+LANG=C.UTF-8
+KUBERNETES_PORT_443_TCP=tcp://10.96.0.1:443
+GPG_KEY=E3FF2839C048B25C084DEBE9B26995E310250568
+TERM=xterm
+SHLVL=1
+KUBERNETES_PORT_443_TCP_PROTO=tcp
+PYTHON_PIP_VERSION=21.2.4
+KUBERNETES_PORT_443_TCP_ADDR=10.96.0.1
+PYTHON_GET_PIP_SHA256=7c5239cea323cadae36083079a5ee6b2b3d56f25762a0c060d2867b89e5e06c5
+KUBERNETES_SERVICE_HOST=10.96.0.1
+KUBERNETES_PORT=tcp://10.96.0.1:443
+KUBERNETES_PORT_443_TCP_PORT=443
+PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/2caf84b14febcda8077e59e9b8a6ef9a680aa392/public/get-pip.py
+PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+_=/usr/bin/env
+
+root@test:/# /kubectl get svc
+Error from server (Forbidden): services is forbidden: User "system:serviceaccount:foo:default" cannot list resource "services" in API group "" in the namespace "foo"
+```
+
+Because the default permissions for a ServiceAccount don't allow it to list or modify any resources. Now, let's learn how to allow the ServiceAccount to do that. First, you'll need to create a Role resource.
+
+```sh
+kubectl create role service-reader --verb=get --verb=list --resource=services -n foo
+role.rbac.authorization.k8s.io/service-reader created
+
+kubectl create role service-reader --verb=get --verb=list --resource=services -n bar
+role.rbac.authorization.k8s.io/service-reader created
+```
+
+A Role defines what actions can be performed, but it doesn't specify who can perform them. To do that, you must bind the Role to a subject, which can be a user, a Service-Account, or a group (of users or ServiceAccounts).
+
+Binding Roles to subjects is achieved by creating a RoleBinding resource. To bind the Role to the default ServiceAccount, run the following command:
+
+```sh
+kubectl create rolebinding test --role=service-reader --serviceaccount=foo:default -n foo
+rolebinding.rbac.authorization.k8s.io/test created
+```
+
+Note that, if you want to bind a Role to a user instead of a ServiceAccount, use the `--user` argument to specify the username. To bind it to a group, use `--group`.
+
+Because this RoleBinding binds the Role to the ServiceAccount the pod in namespace foo is running under, you can now list Services from within that pod.
+
+```sh
+kubectl exec -it test -n foo -- bash
+
+root@test:/# /kubectl get svc
+No resources found in foo namespace.
+```
+
+Because we only create the RoleBinding for the foo namespace, the bar namespace is not. This leads the pod in namespace bar can't list the Services in its own namespace, and obviouslyalso not those in the foo namespace.
+
+```sh
+kubectl exec -it test -n bar -- bash
+
+root@test:/# /kubectl get svc
+Error from server (Forbidden): services is forbidden: User "system:serviceaccount:bar:default" cannot list resource "services" in API group "" in the namespace "bar"
+
+root@test:/# /kubectl get svc -n foo
+Error from server (Forbidden): services is forbidden: User "system:serviceaccount:bar:default" cannot list resource "services" in API group "" in the namespace "foo"
+```
+
+But you can edit your RoleBinding in the foo namespace and add the other pod's ServiceAccount, even though it's in a different namespace. Run the following command:
+
+```sh
+kubectl edit rolebinding test -n foo
+
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: "2022-04-16T06:36:58Z"
+  name: test
+  namespace: foo
+  resourceVersion: "376922"
+  uid: b35fb7a1-82d0-4114-a4a6-2602ec00394f
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: service-reader
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: foo
+```
+
+Then add the following lines to the list of subjects, look like that:
+
+```
+...
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: foo
+- kind: ServiceAccount
+  name: default
+  namespace: bar
+```
+
+Now you can also list Services in the `foo` namespace from inside the pod running in the `bar` namespace:
+
+```sh
+kubectl exec -it test -n bar -- bash
+
+root@test:/# /kubectl get svc
+Error from server (Forbidden): services is forbidden: User "system:serviceaccount:bar:default" cannot list resource "services" in API group "" in the namespace "bar"
+
+root@test:/# /kubectl get svc -n foo
+No resources found in foo namespace.
+```
+
+### ClusterRoles and ClusterRoleBindings
+
+A ClusterRole can be used to allow access to cluster-level resources. Let's look at how to allow your pod to list PersistentVolumes in your cluster. First, we will create a ClusterRole called `pv-reader`:
+
+```sh
+kubectl create clusterrole pv-reader --verb=get,list --resource=persistentvolumes
+clusterrole.rbac.authorization.k8s.io/pv-reader created
+```
+
+We will exec to the pod in `foo` namespace and list PersistentVolumes:
+
+```sh
+kubectl exec -it test -n foo -- bash
+
+root@test:/# /kubectl get pv
+Error from server (Forbidden): persistentvolumes is forbidden: User "system:serviceaccount:foo:default" cannot list resource "persistentvolumes" in API group "" at the cluster scope
+```
+
+Default ServiceAccount is unable to get and list PersistentVolumes, you must bind the ClusterRole to a ServiceAccount by run the following command:
+
+```sh
+kubectl create clusterrolebinding pv-test --clusterrole=pv-reader --serviceaccount=foo:default
+clusterrolebinding.rbac.authorization.k8s.io/pv-test created
+```
+
+Let's see if you can list PersistentVolumes now:
+
+```sh
+kubectl exec -it test -n foo -- bash
+
+root@test:/# /kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                  STORAGECLASS   REASON   AGE
+pvc-5865deec-56a1-4743-9e9f-e638b9e959fa   1Mi        RWO            Delete           Bound    default/data-kubia-1   standard                5d
+pvc-d74affe3-ded5-46f7-889d-c0abf4c12e0a   1Mi        RWO            Delete           Bound    default/data-kubia-0   standard                5d
+```
+
+Note that if you create a `ClusterRoleBinding` and reference the `ClusterRole` in it, the subjects listed in the binding can view the specified resources across all namespaces. If, on the other hand, you create a `RoleBinding`, the subjects listed in the binding can only view resources in the namespace of the `RoleBinding`. We will confirm now.
+
+First, trying to list pods across all namespaces and `foo` namespace:
+
+```sh
+kubectl exec -it test -n foo -- bash
+
+root@test:/# /kubectl get pods --all-namespaces
+Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:foo:default" cannot list resource "pods" in API group "" at the cluster scope
+
+root@test:/# /kubectl get pods -n foo
+Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:foo:default" cannot list resource "pods" in API group "" in the namespace "foo"
+```
+
+Now, let's see what happens when you create a ClusterRoleBinding (not RoleBinding) and bind it to the pod's ServiceAccount:
+
+```sh
+kubectl create clusterrolebinding view-test --clusterrole=view --serviceaccount=foo:default
+clusterrolebinding.rbac.authorization.k8s.io/view-test created
+
+kubectl exec -it test -n foo -- bash
+root@test:/# /kubectl get pods --all-namespaces
+NAMESPACE       NAME                                        READY   STATUS      RESTARTS         AGE
+bar             test                                        1/1     Running     3 (6h21m ago)    39h
+foo             test                                        1/1     Running     3 (6h21m ago)    39h
+ingress-nginx   ingress-nginx-admission-create--1-6rs7v     0/1     Completed   0                5d17h
+ingress-nginx   ingress-nginx-admission-patch--1-qf2zd      0/1     Completed   1                5d17h
+ingress-nginx   ingress-nginx-controller-5f66978484-wtpph   1/1     Running     7 (6h21m ago)    5d17h
+kube-system     coredns-78fcd69978-kfxrb                    1/1     Running     29 (8h ago)      79d
+kube-system     etcd-minikube                               1/1     Running     29 (8h ago)      79d
+kube-system     kube-apiserver-minikube                     1/1     Running     29 (8h ago)      79d
+kube-system     kube-controller-manager-minikube            1/1     Running     30 (8h ago)      79d
+kube-system     kube-proxy-wjfqr                            1/1     Running     29 (6h21m ago)   79d
+kube-system     kube-scheduler-minikube                     1/1     Running     29 (6h21m ago)   79d
+kube-system     storage-provisioner                         1/1     Running     59 (6h19m ago)   79d
+my-app-prod     nginx                                       1/1     Running     6 (6h21m ago)    4d13h
+
+root@test:/# /kubectl get pods -n foo
+NAME   READY   STATUS    RESTARTS        AGE
+test   1/1     Running   3 (6h22m ago)   39h
+
+root@test:/# /kubectl get pods -n bar
+NAME   READY   STATUS    RESTARTS        AGE
+test   1/1     Running   3 (6h22m ago)   39h
+```
+
+As expected, the pod can get a list of all the pods in the cluster. Let's describe the view-test ClusterRole:
+
+```sh
+kubectl get clusterrolebindings.rbac.authorization.k8s.io view-test -o yaml
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: "2022-04-16T08:30:33Z"
+  name: view-test
+  resourceVersion: "382606"
+  uid: 08b8d16a-8bc7-4b95-8ba3-c28650b08f9f
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: foo
+```
+
+To summarize, combining a ClusterRoleBinding with a ClusterRole referring to namespaced resources allows the pod to access namespaced resources in any namespace.
+
+Now we will use RoleBinding instead ClusterRoleBinding:
+
+```sh
+kubectl delete clusterrolebindings.rbac.authorization.k8s.io view-test
+clusterrolebinding.rbac.authorization.k8s.io "view-test" deleted
+
+kubectl create rolebinding view-test --clusterrole=view --serviceaccount=foo:default -n foo 
+rolebinding.rbac.authorization.k8s.io/view-test created
+
+kubectl exec -it test -n foo -- bash
+root@test:/# /kubectl get pods --all-namespaces
+Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:foo:default" cannot list resource "pods" in API group "" at the cluster scope
+
+root@test:/# /kubectl get pods -n bar
+Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:foo:default" cannot list resource "pods" in API group "" in the namespace "bar"
+
+root@test:/# /kubectl get pods -n foo
+NAME   READY   STATUS    RESTARTS        AGE
+test   1/1     Running   3 (6h33m ago)   39h
+```
+
