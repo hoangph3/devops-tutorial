@@ -880,3 +880,4 @@ NAME   READY   STATUS    RESTARTS        AGE
 test   1/1     Running   3 (6h33m ago)   39h
 ```
 
+It's not too surprising, your pod can list pods in the `foo` namespace, but not in any other specific namespace or across all namespaces.
