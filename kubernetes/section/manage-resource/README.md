@@ -1,6 +1,71 @@
-### Manage Memory, CPU, Resource Quotas, ...
+### Manage pod resource by `LimitRange`
 
-This tutorial is run on minikube.
+```yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: example
+spec:
+  limits:
+  - type: Pod
+    min:
+      cpu: 50m
+      memory: 5Mi
+    max:
+      cpu: 1
+      memory: 1Gi
+  - type: Container
+    defaultRequest:
+      cpu: 100m
+      memory: 10Mi
+    default:
+      cpu: 200m
+      memory: 100Mi
+    min:
+      cpu: 50m
+      memory: 5Mi
+    max:
+      cpu: 1
+      memory: 1Gi
+    maxLimitRequestRatio:
+      cpu: 4
+      memory: 10
+  - type: PersistentVolumeClaim
+    min:
+      storage: 1Gi
+    max:
+      storage: 10Gi
+```
+
+```sh
+kubectl apply -f limit-range.yaml
+```
+
+Now we try creating a pod that requests more CPU than allowed by the `LimitRange`:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: big-pod
+spec:
+  containers:
+  - image: busybox
+    args: ["sleep", "9999999"]
+    name: main
+    resources:
+      requests:
+        cpu: 2
+```
+
+We will get error:
+
+```
+$ kubectl apply -f pod-with-big-resource.yaml 
+The Pod "big-pod" is invalid: spec.containers[0].resources.requests: Invalid value: "2": must be less than or equal to cpu limit
+```
+
+### Manage namespace resource by `ResourceQuota`
 
 Step 1: Create demo namespace
 
@@ -215,4 +280,27 @@ Commercial support is available at
 <p><em>Thank you for using nginx.</em></p>
 </body>
 </html>
+```
+
+The ResourceQuota have many `.spec.hard` properties other:
+
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: object-storage-quota
+spec:
+  hard:
+    pods: 10
+    replicationcontrollers: 5
+    secrets: 10
+    configmaps: 10
+    persistentvolumeclaims: 5
+    services: 5
+    services.loadbalancers: 1
+    services.nodeports: 2
+    ssd.storageclass.storage.k8s.io/persistentvolumeclaims: 2
+    requests.storage: 500Gi
+    ssd.storageclass.storage.k8s.io/requests.storage: 300Gi
+    standard.storageclass.storage.k8s.io/requests.storage: 1Ti
 ```
