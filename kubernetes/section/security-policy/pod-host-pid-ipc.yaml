@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-host-pid-ipc
+spec:
+  hostPID: true
+  hostIPC: true
+  containers:
+  - name: main
+    image: busybox
+    command: ['sh', '-c']
+    args:
+    - echo "$(date) Hello Kubernetes !";
+      sleep 999999;

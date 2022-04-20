@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-host-port
+spec:
+  containers:
+  - name: main
+    image: busybox
+    command: ['sh', '-c']
+    args:
+    - echo "$(date) Hello Kubernetes !";
+      sleep 999999;
+    ports:
+      - containerPort: 8080
+        hostPort: 9000
+        protocol: TCP
