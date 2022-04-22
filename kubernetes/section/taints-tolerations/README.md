@@ -131,7 +131,7 @@ kind: Deployment
 metadata:
   name: pod-with-toleration
   labels:
-    app: test
+    app: nginx
 spec:
   selector:
     matchLabels:
