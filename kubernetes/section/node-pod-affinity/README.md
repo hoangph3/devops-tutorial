@@ -260,3 +260,27 @@ My cluster have 4 nodes with 2 master nodes and 2 worker nodes. With `podAntiAff
 
 ### Node Name
 
+`nodeName` is a more direct form of node selection than `nodeAffinity` or `nodeSelector`. `nodeName` is a field in the Pod spec. If the `nodeName` field is not empty, the scheduler ignores the Pod and the kubelet on the named node tries to place the Pod on that node.
+
+The `nodeName` have some limitations such as: the Pod will not run if the named node does not exist, the Pod will fail if the named node does not have the resources to accommodate the Pod, and node names in cloud environments are not always stable.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+  nodeName: worker-2
+```
+
+```
+vagrant@master-1:~$ kubectl apply -f pod-with-node-name.yaml 
+pod/nginx created
+
+vagrant@master-1:~$ kubectl get pods -o wide
+NAME    READY   STATUS    RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+nginx   1/1     Running   0          14s   10.244.3.42   worker-2   <none>           <none>
+```
