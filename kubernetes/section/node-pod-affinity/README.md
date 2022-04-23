@@ -145,7 +145,7 @@ spec:
   selector:
     matchLabels:
       app: store
-  replicas: 3
+  replicas: 2
   template:
     metadata:
       labels:
@@ -166,7 +166,7 @@ spec:
         image: redis:3.2-alpine
 ```
 
-In the above example Deployment for the redis cache, the replicas get the label `app=store`. The `podAntiAffinity` rule tells the scheduler to avoid placing multiple replicas with the `app=store` label on a single node. This creates each cache in a separate node.
+In the above example Deployment for the redis cache, the replicas get the label `app=store`. The `podAntiAffinity` rule tells the scheduler to avoid placing multiple replicas with the `app=store` label on a single node. This creates each cache in a separate node. In this case, we have 2 replicas corresponding to 2 worker nodes.
 
 ```
 vagrant@master-1:~$ kubectl apply -f redis-pod-anti-affinity.yaml 
@@ -187,7 +187,7 @@ spec:
   selector:
     matchLabels:
       app: web-store
-  replicas: 3
+  replicas: 2
   template:
     metadata:
       labels:
@@ -230,6 +230,33 @@ redis-cache-6b7b79d589-vzmlf   1/1     Running   0          6m20s   10.244.3.28 
 web-server-f6798875f-b5nn2     1/1     Running   0          17s     10.244.2.24   worker-1   <none>           <none>
 web-server-f6798875f-s625n     1/1     Running   0          16s     10.244.3.29   worker-2   <none>           <none>
 ```
+
+Suppose we need scaling the replicas up to `3`, we will get the `Pending` status:
+
+```
+vagrant@master-1:~$ kubectl get pods -o wide
+NAME                           READY   STATUS    RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+redis-cache-6b7b79d589-gvcdh   1/1     Running   0          2m54s   10.244.3.32   worker-2   <none>           <none>
+redis-cache-6b7b79d589-hl44v   0/1     Pending   0          2m24s   <none>        <none>     <none>           <none>
+redis-cache-6b7b79d589-pfxlc   1/1     Running   0          2m54s   10.244.2.27   worker-1   <none>           <none>
+web-server-f6798875f-2j65x     1/1     Running   0          2m45s   10.244.3.33   worker-2   <none>           <none>
+web-server-f6798875f-dp6pj     0/1     Pending   0          2m14s   <none>        <none>     <none>           <none>
+web-server-f6798875f-k5595     1/1     Running   0          2m45s   10.244.2.28   worker-1   <none>           <none>
+```
+
+Let's describe the `Pending` pod:
+
+```
+vagrant@master-1:~$ kubectl describe pod web-server-f6798875f-dp6pj
+...
+Events:
+  Type     Reason            Age                    From               Message
+  ----     ------            ----                   ----               -------
+  Warning  FailedScheduling  8m51s                  default-scheduler  0/4 nodes are available: 2 node(s) didn't match pod anti-affinity rules, 2 node(s) had taint {node-role.kubernetes.io/master: }, that the pod didn't tolerate.
+...
+```
+
+My cluster have 4 nodes with 2 master nodes and 2 worker nodes. With `podAntiAffinity`, the scheduler will create each pod in a separate node, we have `3` pods with `replicas: 3` (2 pods on 2 worker nodes, 1 pod on 1 master node). Because the master node have taint, the pod can't be scheduled on it.
 
 ### Node Name
 
