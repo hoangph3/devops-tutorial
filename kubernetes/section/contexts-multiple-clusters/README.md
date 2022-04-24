@@ -103,19 +103,22 @@ Filling data from `certificate-authority-data`, `server`, `client-certificate-da
 Now we listing contexts, then switching between contexts:
 
 ```
-$ kubectl config get-contexts        
+$ kubectl config get-contexts
 CURRENT   NAME                   CLUSTER      AUTHINFO    NAMESPACE
           dev-admin@kubernetes   kubernetes   dev-admin   default
 *         minikube               minikube     minikube    default
 
-$ kubectl cluster-info       
-Kubernetes control plane is running at https://192.168.49.2:8443
-CoreDNS is running at https://192.168.49.2:8443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+$ kubectl get nodes
+NAME       STATUS   ROLES                  AGE   VERSION
+minikube   Ready    control-plane,master   87d   v1.22.3
 
-$ kubectl config use-context dev-admin@kubernetes 
+$ kubectl config use-context dev-admin@kubernetes
 Switched to context "dev-admin@kubernetes".
 
-$ kubectl cluster-info                           
-Kubernetes control plane is running at https://192.168.56.15:6443
-CoreDNS is running at https://192.168.56.15:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+$ kubectl get nodes
+NAME       STATUS   ROLES                  AGE   VERSION
+master-1   Ready    control-plane,master   19d   v1.23.0
+master-2   Ready    control-plane,master   19d   v1.23.0
+worker-1   Ready    <none>                 19d   v1.23.0
+worker-2   Ready    <none>                 19d   v1.23.0
 ```
