@@ -1,7 +1,6 @@
 apiVersion: extensions.example.com/v1
 kind: Website
 metadata:
-  name: web-demo
+  name: kubia
 spec:
-  hostPath:
-    path: "web-demo"
+  gitRepo: https://github.com/hoangph3/kubia-website-example.git
