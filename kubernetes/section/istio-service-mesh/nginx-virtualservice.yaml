@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: my-nginx-virtualservice
+  namespace: my-namespace
+spec:
+  hosts:
+  - "mynginx.example.com"
+  gateways:
+  - my-nginx-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 80
+        host: webserver # matched .metadata.name in Service

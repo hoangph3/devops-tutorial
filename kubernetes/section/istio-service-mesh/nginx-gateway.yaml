@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: my-nginx-gateway
+  namespace: my-namespace
+spec:
+  selector:
+    istio: ingressgateway # get from labels when describe istio-ingressgateway service
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+      - "mynginx.example.com"
