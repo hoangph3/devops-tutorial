@@ -328,3 +328,35 @@ accept-ranges: bytes
 x-envoy-upstream-service-time: 17
 ```
 
+To monitoring and data visualization, we can use `kiali` - an observability console for Istio with service mesh configuration and validation capabilities.
+
+Istio provides a basic sample installation to quickly get Kiali up and running:
+
+```
+$ kubectl apply -f kiali.yaml
+serviceaccount/kiali created
+configmap/kiali created
+clusterrole.rbac.authorization.k8s.io/kiali-viewer created
+clusterrole.rbac.authorization.k8s.io/kiali created
+clusterrolebinding.rbac.authorization.k8s.io/kiali created
+role.rbac.authorization.k8s.io/kiali-controlplane created
+rolebinding.rbac.authorization.k8s.io/kiali-controlplane created
+service/kiali created
+deployment.apps/kiali created
+
+$ kubectl get svc -n istio-system 
+NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                                      AGE
+istio-ingressgateway   LoadBalancer   10.111.182.40    <pending>     15021:31549/TCP,80:30496/TCP,443:32456/TCP   4h17m
+istiod                 ClusterIP      10.103.110.234   <none>        15010/TCP,15012/TCP,443/TCP,15014/TCP        4h18m
+kiali                  ClusterIP      10.97.52.71      <none>        20001/TCP,9090/TCP                           13s
+```
+
+Instead expose kiali service, we can forward port from kiali service to localhost by command line:
+
+```
+$ kubectl port-forward svc/kiali -n istio-system 20001
+Forwarding from 127.0.0.1:20001 -> 20001
+Forwarding from [::1]:20001 -> 20001
+```
+
+Then, access Kiali by visiting http://127.0.0.1:20001 in your preferred web browser.
