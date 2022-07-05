@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gpu-demo
+spec:
+  selector:
+    matchLabels:
+      app: gpu
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: gpu
+    spec:
+      containers:
+      - name: gpu-demo
+        image: nvidia/cuda:10.1-cudnn7-runtime-ubuntu18.04
+        command: ["/bin/sh", "-c"]
+        args: ["nvidia-smi && tail -f /dev/null"]
+        ports:
+        - containerPort: 80

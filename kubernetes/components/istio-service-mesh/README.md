@@ -333,6 +333,14 @@ To monitoring and data visualization, we can use `kiali` - an observability cons
 Istio provides a basic sample installation to quickly get Kiali up and running:
 
 ```
+$ kubectl apply -f prometheus.yaml
+serviceaccount/prometheus created
+configmap/prometheus created
+clusterrole.rbac.authorization.k8s.io/prometheus created
+clusterrolebinding.rbac.authorization.k8s.io/prometheus created
+service/prometheus created
+deployment.apps/prometheus created
+
 $ kubectl apply -f kiali.yaml
 serviceaccount/kiali created
 configmap/kiali created
@@ -344,11 +352,12 @@ rolebinding.rbac.authorization.k8s.io/kiali-controlplane created
 service/kiali created
 deployment.apps/kiali created
 
-$ kubectl get svc -n istio-system 
+$ kubectl get svc -n istio-system
 NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                                      AGE
-istio-ingressgateway   LoadBalancer   10.111.182.40    <pending>     15021:31549/TCP,80:30496/TCP,443:32456/TCP   4h17m
-istiod                 ClusterIP      10.103.110.234   <none>        15010/TCP,15012/TCP,443/TCP,15014/TCP        4h18m
-kiali                  ClusterIP      10.97.52.71      <none>        20001/TCP,9090/TCP                           13s
+istio-ingressgateway   LoadBalancer   10.111.182.40    <pending>     15021:31549/TCP,80:30496/TCP,443:32456/TCP   4h34m
+istiod                 ClusterIP      10.103.110.234   <none>        15010/TCP,15012/TCP,443/TCP,15014/TCP        4h34m
+kiali                  ClusterIP      10.100.112.235   <none>        20001/TCP,9090/TCP                           8s
+prometheus             ClusterIP      10.110.80.171    <none>        9090/TCP                                     54s
 ```
 
 Instead expose kiali service, we can forward port from kiali service to localhost by command line:
