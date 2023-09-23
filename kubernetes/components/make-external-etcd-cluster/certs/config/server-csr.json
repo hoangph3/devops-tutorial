@@ -2,9 +2,8 @@
   "CN": "kubernetes",
   "hosts": [
     "127.0.0.1",
-    "192.168.56.11",
-    "192.168.56.12",
-    "192.168.56.15",
+    "localhost",
+    "192.168.49.2",
     "kubernetes",
     "kubernetes.default",
     "kubernetes.default.svc",

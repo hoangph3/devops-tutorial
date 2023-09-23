@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  proxy:
+    image: nginx:alpine
+    networks:
+      - site1
+      - site2
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d
+      - ./includes:/etc/nginx/includes
+      - ./certs/example.crt:/etc/ssl/certs/example.crt
+      - ./certs/example.key:/etc/ssl/private/example.key
+
+networks:
+  site1:
+    external:
+      name: site1_default
+  site2:
+    external:
+      name: site2_default

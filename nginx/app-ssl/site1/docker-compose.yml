@@ -1,0 +1,8 @@
+version: '3'
+services:
+  site1:
+    image: nginx:alpine
+    volumes:
+      - .:/usr/share/nginx/html/
+    expose:
+      - "80"
