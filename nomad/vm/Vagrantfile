@@ -1,0 +1,34 @@
+hosts = {
+    "nomad-node01" => "192.168.56.10",
+    # "nomad-node02" => "192.168.56.11",
+    # "nomad-node03" => "192.168.56.12"
+}
+
+Vagrant.configure("2") do |config|
+
+    config.ssh.insert_key = true
+    config.ssh.forward_agent = true
+
+    config.vm.box = "generic/ubuntu2004"
+    config.vm.box_version = "3.1.16"
+    config.vm.provision:shell, inline: <<-SHELL
+        echo "root:rootroot" | sudo chpasswd
+        sudo timedatectl set-timezone Asia/Ho_Chi_Minh
+    SHELL
+
+    hosts.each do |name, ip|
+        config.vm.define name do |machine|
+            machine.vm.network :private_network, ip: ip
+            machine.vm.provider "virtualbox" do |v|
+                v.name = name
+                v.memory = 1024
+                v.cpus = 1
+            # keep swapoff everytime and change hostname
+            machine.vm.provision "shell", inline: "swapoff -a"
+            machine.vm.provision "shell", inline: "sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab"
+            machine.vm.provision "shell", inline: "hostnamectl set-hostname #{name}"
+            machine.vm.provision "shell", path: "bootstrap.sh"
+            end
+        end
+    end
+end
