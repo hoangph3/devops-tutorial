@@ -15,13 +15,11 @@ job "nginx" {
       driver = "docker"
 
       config {
-        image = "nginx:latest"
+        image = "nginx:alpine"
         ports = ["http"]
-        mount {
-          type   = "bind"
-          source = "local"
-          target = "/etc/nginx"
-        }
+        volumes = [
+          "local/nginx.conf:/etc/nginx/nginx.conf",
+        ]
       }
 
       template {
