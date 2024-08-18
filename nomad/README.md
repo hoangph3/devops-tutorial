@@ -92,7 +92,7 @@ service {
 6. Run job:
 ```sh
 export NOMAD_TOKEN=$(sudo cat /etc/nomad.d/data/nomad.token | awk '/Secret ID/ {print $NF}')
-nomad run jobs/example.hcl
+nomad run -detach jobs/example.hcl
 ```
 
 7. Testing:

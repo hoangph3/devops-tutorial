@@ -62,12 +62,29 @@
     {{ consul_binary }} acl token create -description "Token for DNS Requests" -policy-name dns-requests
   environment:
     CONSUL_HTTP_TOKEN: "{{ consul_acl_bootstrap_token }}"
+  register: dns_policy_token_output_raw
+
+- name: "Save consul dns request token to file"
+  copy:
+    content: "{{ dns_policy_token_output_raw.stdout }}"
+    dest: "{{ consul_data_directory }}/dns.token"
+    mode: "0600"
+
+- name: Retrieve Secret ID from dns request token output
+  shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/dns.token"
+  changed_when: false
+  register: dns_token_output
 
 - name: Reconfigure {{ consul_etc_directory }}/consul.hcl
   lineinfile:
     path: "{{ consul_etc_directory }}/consul.hcl"
-    regexp: '#default = ""'
-    line: '    default = "{{ consul_agent_token }}"'
+    regexp: '#agent = ""'
+    line: '    agent = "{{ consul_agent_token }}"'
+
+- name: Set the DNS token as default for the Consul agent.
+  shell: "{{ consul_binary }} acl set-agent-token default '{{ dns_token_output.stdout }}'"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_acl_bootstrap_token }}"
 
 - name: Restart consul service
   shell: |
