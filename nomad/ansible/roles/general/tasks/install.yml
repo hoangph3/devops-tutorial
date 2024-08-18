@@ -1,0 +1,27 @@
+- name: Download consul binary
+  shell: |
+    wget {{ consul_url }} -O {{ download_directory }}/consul.zip
+    unzip -o {{ download_directory }}/consul.zip -d {{ download_directory }}
+    mv {{ download_directory }}/consul {{ consul_binary }}
+    rm -rf {{ download_directory }}/consul.zip
+
+- name: Download nomad binary
+  shell: |
+    wget {{ nomad_url }} -O {{ download_directory }}/nomad.zip
+    unzip -o {{ download_directory }}/nomad.zip -d {{ download_directory }}
+    mv {{ download_directory }}/nomad {{ nomad_binary }}
+    rm -rf {{ download_directory }}/nomad.zip
+
+- name: Get consul & nomad version
+  shell: |
+    consul -v
+    nomad -v
+  register: consul_nomad_version
+
+- name: Show consul & nomad version
+  debug:
+    msg: "{{ consul_nomad_version.stdout_lines }}"
+
+- name: Install dnsmasq
+  shell: |
+    apt-get install dnsmasq -y

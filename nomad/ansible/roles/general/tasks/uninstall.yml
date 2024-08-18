@@ -1,0 +1,16 @@
+- name: Stop nomad & consul service
+  shell: |
+    systemctl stop nomad
+    systemctl stop consul
+    rm -rf {{ consul_systemd_service_file }}
+    rm -rf {{ nomad_systemd_service_file }}
+
+- name: Prune nomad & consul data
+  shell: |
+    rm -rf {{ nomad_etc_directory }}
+    rm -rf {{ consul_etc_directory }}
+
+- name: Prune nomad & consul log
+  shell: |
+    rm -rf {{ nomad_log_directory }}
+    rm -rf {{ consul_log_directory }}

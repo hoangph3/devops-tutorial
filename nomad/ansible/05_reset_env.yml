@@ -1,0 +1,13 @@
+- name: Reset environment
+  hosts: all
+  become: true
+
+  vars_files:
+    - vars/consul.yml
+    - vars/nomad.yml
+    - vars/general.yml
+
+  tasks:
+    - include_role:
+        name: general
+        tasks_from: uninstall

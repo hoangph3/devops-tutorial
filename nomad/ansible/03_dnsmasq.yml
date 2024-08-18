@@ -1,0 +1,12 @@
+- name: Dnsmasq install
+  hosts: all
+  become: true
+
+  vars_files:
+    - vars/consul.yml
+    - vars/general.yml
+
+  tasks:
+    - include_role:
+        name: dnsmasq
+        tasks_from: install

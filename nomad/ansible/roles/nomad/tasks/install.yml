@@ -1,0 +1,51 @@
+- name: Create {{ nomad_etc_directory }} if it's not exists
+  file:
+    path: "{{ nomad_etc_directory }}"
+    state: directory
+    recurse: yes
+
+- name: Create {{ nomad_log_directory }} if it's not exists
+  file:
+    path: "{{ nomad_log_directory }}"
+    state: directory
+    recurse: yes
+
+- name: Create {{ nomad_etc_directory }}/nomad.hcl file
+  template:
+    src: nomad.hcl.j2
+    dest: "{{ nomad_etc_directory }}/nomad.hcl"
+
+- name: Create {{ nomad_etc_directory }}/client.hcl file
+  template:
+    src: client.hcl.j2
+    dest: "{{ nomad_etc_directory }}/client.hcl"
+  when: inventory_hostname in groups['nomad_clients']
+
+- name: Create {{ nomad_etc_directory }}/server.hcl file
+  template:
+    src: server.hcl.j2
+    dest: "{{ nomad_etc_directory }}/server.hcl"
+  when: inventory_hostname in groups['nomad_servers']
+
+- name: Create {{ nomad_systemd_service_file }} file
+  template:
+    src: nomad.service.j2
+    dest: "{{ nomad_systemd_service_file }}"
+
+- name: Run nomad service
+  shell: |
+    systemctl enable nomad
+    systemctl restart nomad
+
+- name: Get nomad service status
+  shell: |
+    systemctl status nomad
+  register: nomad_service_status
+
+- name: Show nomad service status
+  debug:
+    msg: "{{ nomad_service_status.stdout_lines }}"
+
+- name: Wait for nomad
+  pause:
+    seconds: "{{ nomad_pause_seconds }}"

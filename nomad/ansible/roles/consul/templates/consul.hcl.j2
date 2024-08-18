@@ -1,0 +1,44 @@
+data_dir = "{{ consul_data_directory }}"
+domain = "{{ consul_domain }}"
+
+retry_join = [{% for host in groups['consul_servers'] %}{{ hostvars[host].ansible_default_ipv4.address | to_json }}{% if not loop.last %}, {% endif %}{% endfor %}]
+
+{% if inventory_hostname in groups['consul_servers'] %}
+bind_addr = "{{ ansible_host }}"
+client_addr = "0.0.0.0"
+ui = true
+{% elif inventory_hostname in groups['consul_clients'] %}
+bind_addr = "{{ ansible_host }}"
+check_update_interval = "0s"
+{% endif %}
+
+log_level = "{{ consul_log_level }}"
+log_json = {{ consul_log_json }}
+log_file = "{{ consul_log_directory }}/"
+log_rotate_duration = "{{ consul_log_rotate_duration }}"
+log_rotate_max_files = {{ consul_log_rotate_max_files }}
+
+acl = {
+  enabled = true
+  default_policy = "deny"
+  enable_token_persistence = true
+  tokens = {
+    #default = ""
+  }
+}
+
+performance {
+  raft_multiplier = 1
+}
+
+{% if inventory_hostname in groups['consul_servers'] %}
+server = true
+bootstrap_expect = {{ groups['consul_servers'] | length }}
+{% elif inventory_hostname in groups['consul_clients'] %}
+server = false
+{% endif %}
+rejoin_after_leave = true
+
+connect {
+  enabled = true
+}

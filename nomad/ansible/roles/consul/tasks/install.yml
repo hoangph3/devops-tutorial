@@ -1,0 +1,39 @@
+- name: Create {{ consul_etc_directory }} if it's not exists
+  file:
+    path: "{{ consul_etc_directory }}"
+    state: directory
+    recurse: yes
+
+- name: Create {{ consul_log_directory }} if it's not exists
+  file:
+    path: "{{ consul_log_directory }}"
+    state: directory
+    recurse: yes
+
+- name: Create {{ consul_etc_directory }}/consul.hcl file
+  template:
+    src: consul.hcl.j2
+    dest: "{{ consul_etc_directory }}/consul.hcl"
+
+- name: Create {{ consul_systemd_service_file }} file
+  template:
+    src: consul.service.j2
+    dest: "{{ consul_systemd_service_file }}"
+
+- name: Run consul service
+  shell: |
+    systemctl enable consul
+    systemctl restart consul
+
+- name: Get consul service status
+  shell: |
+    systemctl status consul
+  register: consul_service_status
+
+- name: Show consul service status
+  debug:
+    msg: "{{ consul_service_status.stdout_lines }}"
+
+- name: Wait for consul
+  pause:
+    seconds: "{{ consul_pause_seconds }}"

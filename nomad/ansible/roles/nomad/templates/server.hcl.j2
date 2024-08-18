@@ -1,0 +1,12 @@
+server {
+  enabled = true
+  bootstrap_expect = {{ groups['nomad_servers'] | length }}
+}
+
+acl {
+  enabled = {{ nomad_use_bootstrap | lower }}
+}
+
+consul {
+  token = "{{ nomad_server_token }}"
+}

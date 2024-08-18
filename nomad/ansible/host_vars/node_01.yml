@@ -1,0 +1,9 @@
+ansible_host: '192.168.0.3'
+ansible_port: 22
+ansible_user: 'hoang'  # ssh username
+ansible_password: '286'  # ssh password
+ansible_become_pass: '286'  # sudo password
+ansible_become_method: sudo
+ansible_become_user: root
+ansible_become: yes
+ansible_python_interpreter: /usr/bin/python3

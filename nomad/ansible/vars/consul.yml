@@ -1,0 +1,17 @@
+---
+consul_version: 1.17.0
+consul_url: https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_linux_amd64.zip
+consul_binary: "/usr/local/bin/consul"
+consul_etc_directory: "/etc/consul.d"
+consul_data_directory: "{{ consul_etc_directory }}/data"
+consul_systemd_service_file: "/etc/systemd/system/consul.service"
+
+consul_log_level: "info"
+consul_log_json: "false"
+consul_log_directory: "/var/log/consul"
+consul_log_rotate_duration: "86400s"
+consul_log_rotate_max_files: "7"
+
+consul_domain: "demo"
+
+consul_pause_seconds: "30"

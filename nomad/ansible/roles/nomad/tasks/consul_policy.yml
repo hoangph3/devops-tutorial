@@ -1,0 +1,62 @@
+- name: Retrieve Secret ID from bootstrap output
+  shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/consul.token"
+  changed_when: false
+  register: consul_acl_bootstrap_output
+
+- name: "Set the Secret ID as a fact."
+  set_fact:
+    consul_acl_bootstrap_token: "{{ consul_acl_bootstrap_output.stdout }}"
+
+- name: Copy ACL policy files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ consul_data_directory }}/{{ item.path }}"
+    mode: "{{ item.mode }}"
+  with_filetree: ../files
+  when: item.state == 'file'
+
+- name: Set nomad client policy
+  shell: |
+    {{ consul_binary }} acl policy create -name nomad-client-service -rules @{{ consul_data_directory }}/nomad-client-service-consul-policy.hcl
+    {{ consul_binary }} acl token create -description "Nomad Client Service Token" -policy-name nomad-client-service
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_acl_bootstrap_token }}"
+  register: nomad_client_token_creation_raw
+
+- name: "Save nomad client token to file"
+  copy:
+    content: "{{ nomad_client_token_creation_raw.stdout }}"
+    dest: "{{ consul_data_directory }}/nomad_client.token"
+    mode: "0600"
+
+- name: Retrieve Secret ID from nomad client token output
+  shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/nomad_client.token"
+  changed_when: false
+  register: nomad_client_token_output
+
+- name: "Create a fact of the nomad client token."
+  set_fact:
+    nomad_client_token: "{{ nomad_client_token_output.stdout }}"
+
+- name: Set nomad server policy
+  shell: |
+    {{ consul_binary }} acl policy create -name nomad-server-service -rules @{{ consul_data_directory }}/nomad-server-service-consul-policy.hcl
+    {{ consul_binary }} acl token create -description "Nomad Server Service Token" -policy-name nomad-server-service
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_acl_bootstrap_token }}"
+  register: nomad_server_token_creation_raw
+
+- name: "Save nomad server token to file"
+  copy:
+    content: "{{ nomad_server_token_creation_raw.stdout }}"
+    dest: "{{ consul_data_directory }}/nomad_server.token"
+    mode: "0600"
+
+- name: Retrieve Secret ID from nomad server token output
+  shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/nomad_server.token"
+  changed_when: false
+  register: nomad_server_token_output
+
+- name: "Create a fact of the nomad server token."
+  set_fact:
+    nomad_server_token: "{{ nomad_server_token_output.stdout }}"

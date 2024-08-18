@@ -1,0 +1,27 @@
+- name: Ensure resolv.conf.dnsmasq config is in place.
+  template:
+    src: resolv.conf.dnsmasq.j2
+    dest: /etc/resolv.conf.dnsmasq
+    mode: "0644"
+
+- name: Ensure new default dnsmasq config is in place.
+  template:
+    src: dnsmasq.conf.j2
+    dest: /etc/dnsmasq.conf
+    mode: "0644"
+
+- name: Ensure Consul dnsmasq config is in place.
+  template:
+    src: 10-consul.j2
+    dest: /etc/dnsmasq.d/10-consul
+    mode: "0644"
+
+- name: Ensure resolv.conf config is in place.
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    mode: 0644
+
+- name: Restart dnsmasq
+  shell: |
+    systemctl restart dnsmasq

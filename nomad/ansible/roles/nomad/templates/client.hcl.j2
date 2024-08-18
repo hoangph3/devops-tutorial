@@ -1,0 +1,11 @@
+client {
+  enabled = true
+}
+
+acl {
+  enabled = {{ nomad_use_bootstrap |lower }}
+}
+
+consul {
+  token = "{{ nomad_client_token }}"
+}

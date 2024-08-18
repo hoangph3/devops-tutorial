@@ -1,0 +1,4 @@
+- import_playbook: 01_setup_env.yml
+- import_playbook: 02_consul.yml
+- import_playbook: 03_dnsmasq.yml
+- import_playbook: 04_nomad.yml

@@ -1,0 +1,16 @@
+- name: Consul install
+  hosts: consul_servers:consul_clients
+  become: true
+
+  vars_files:
+    - vars/consul.yml
+    - vars/general.yml
+
+  tasks:
+    - include_role:
+        name: consul
+        tasks_from: install
+
+    - include_role:
+        name: consul
+        tasks_from: configure

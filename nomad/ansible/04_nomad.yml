@@ -1,0 +1,21 @@
+- name: Nomad install
+  hosts: nomad_servers:nomad_clients
+  become: true
+
+  vars_files:
+    - vars/consul.yml
+    - vars/nomad.yml
+    - vars/general.yml
+
+  tasks:
+    - include_role:
+        name: nomad
+        tasks_from: consul_policy
+
+    - include_role:
+        name: nomad
+        tasks_from: install
+
+    - include_role:
+        name: nomad
+        tasks_from: configure

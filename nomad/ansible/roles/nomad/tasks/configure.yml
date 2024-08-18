@@ -1,0 +1,17 @@
+- name: Nomad bootstrap ACL
+  block:
+  - name: Run nomad acl bootstrap command
+    shell: |
+      {{ nomad_binary }} acl bootstrap
+    changed_when: false
+    register: nomad_acl_bootstrap_raw
+
+  - name: Save nomad bootstrap ACL to file
+    copy:
+      content: "{{ nomad_acl_bootstrap_raw.stdout }}"
+      dest: "{{ nomad_data_directory }}/nomad.token"
+      mode: "0600"
+  when:
+    - inventory_hostname in groups['nomad_servers']
+  delegate_to: "{{ groups['nomad_servers'] | first }}"
+  run_once: true
