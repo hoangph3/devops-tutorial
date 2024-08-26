@@ -2,7 +2,13 @@ job "nginx" {
   datacenters = ["dc1"]
 
   group "nginx-group" {
-    count = 1
+    count = 2
+
+    scaling {
+      enabled = true
+      min = 0
+      max = 2
+    }
 
     network {
       port "http" {

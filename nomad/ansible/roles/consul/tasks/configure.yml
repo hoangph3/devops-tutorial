@@ -11,15 +11,15 @@
       content: "{{ consul_acl_bootstrap_raw.stdout }}"
       dest: "{{ consul_data_directory }}/consul.token"
       mode: "0600"
+
+  - name: Retrieve Secret ID from bootstrap output
+    shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/consul.token"
+    changed_when: false
+    register: consul_acl_bootstrap_output
   when:
     - inventory_hostname in groups['consul_servers']
   delegate_to: "{{ groups['consul_servers'] | first }}"
   run_once: true
-
-- name: Retrieve Secret ID from bootstrap output
-  shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/consul.token"
-  changed_when: false
-  register: consul_acl_bootstrap_output
 
 - name: "Set the Secret ID as a fact."
   set_fact:
@@ -34,46 +34,62 @@
   when: item.state == 'file'
 
 - name: Set consul agent policy
-  shell: |
-    {{ consul_binary }} acl policy create -name consul-agent -rules @{{ consul_data_directory }}/consul-agent-policy.hcl
-    {{ consul_binary }} acl token create -description "Token for Consul Agents" -policy-name consul-agent
-  environment:
-    CONSUL_HTTP_TOKEN: "{{ consul_acl_bootstrap_token }}"
-  register: agent_policy_token_output_raw
+  block:
+  - name: Create consul agent policy
+    shell: |
+      {{ consul_binary }} acl policy create -name consul-agent -rules @{{ consul_data_directory }}/consul-agent-policy.hcl
+      {{ consul_binary }} acl token create -description "Token for Consul Agents" -policy-name consul-agent
+    environment:
+      CONSUL_HTTP_TOKEN: "{{ consul_acl_bootstrap_token }}"
+    register: agent_policy_token_output_raw
 
-- name: "Save consul agent token to file"
-  copy:
-    content: "{{ agent_policy_token_output_raw.stdout }}"
-    dest: "{{ consul_data_directory }}/agent.token"
-    mode: "0600"
+  - name: "Save consul agent token to file"
+    copy:
+      content: "{{ agent_policy_token_output_raw.stdout }}"
+      dest: "{{ consul_data_directory }}/agent.token"
+      mode: "0600"
 
-- name: Retrieve Secret ID from agent token output
-  shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/agent.token"
-  changed_when: false
-  register: consul_agent_token_output
+  - name: Retrieve Secret ID from agent token output
+    shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/agent.token"
+    changed_when: false
+    register: consul_agent_token_output
+  when:
+    - inventory_hostname in groups['consul_servers']
+  delegate_to: "{{ groups['consul_servers'] | first }}"
+  run_once: true
 
 - name: "Create a fact of the agent token."
   set_fact:
     consul_agent_token: "{{ consul_agent_token_output.stdout }}"
 
 - name: Set consul dns request policy
-  shell: |
-    {{ consul_binary }} acl policy create -name dns-requests -rules @{{ consul_data_directory }}/dns-request-policy.hcl
-    {{ consul_binary }} acl token create -description "Token for DNS Requests" -policy-name dns-requests
-  environment:
-    CONSUL_HTTP_TOKEN: "{{ consul_acl_bootstrap_token }}"
-  register: dns_policy_token_output_raw
+  block:
+  - name: Create consul dns request policy
+    shell: |
+      {{ consul_binary }} acl policy create -name dns-requests -rules @{{ consul_data_directory }}/dns-request-policy.hcl
+      {{ consul_binary }} acl token create -description "Token for DNS Requests" -policy-name dns-requests
+    environment:
+      CONSUL_HTTP_TOKEN: "{{ consul_acl_bootstrap_token }}"
+    register: dns_policy_token_output_raw
 
-- name: "Save consul dns request token to file"
-  copy:
-    content: "{{ dns_policy_token_output_raw.stdout }}"
-    dest: "{{ consul_data_directory }}/dns.token"
-    mode: "0600"
+  - name: "Save consul dns request token to file"
+    copy:
+      content: "{{ dns_policy_token_output_raw.stdout }}"
+      dest: "{{ consul_data_directory }}/dns.token"
+      mode: "0600"
 
-- name: Retrieve Secret ID from dns request token output
-  shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/dns.token"
-  changed_when: false
-  register: dns_token_output
+  - name: Retrieve Secret ID from dns request token output
+    shell: "awk '/SecretID/ {print $2}' {{ consul_data_directory }}/dns.token"
+    changed_when: false
+    register: dns_token_output
+  when:
+    - inventory_hostname in groups['consul_servers']
+  delegate_to: "{{ groups['consul_servers'] | first }}"
+  run_once: true
+
+- name: "Create a fact of the dns token."
+  set_fact:
+    dns_token: "{{ dns_token_output.stdout }}"
 
 - name: Reconfigure {{ consul_etc_directory }}/consul.hcl
   lineinfile:
@@ -82,7 +98,7 @@
     line: '    agent = "{{ consul_agent_token }}"'
 
 - name: Set the DNS token as default for the Consul agent.
-  shell: "{{ consul_binary }} acl set-agent-token default '{{ dns_token_output.stdout }}'"
+  shell: "{{ consul_binary }} acl set-agent-token default '{{ dns_token }}'"
   environment:
     CONSUL_HTTP_TOKEN: "{{ consul_acl_bootstrap_token }}"
 

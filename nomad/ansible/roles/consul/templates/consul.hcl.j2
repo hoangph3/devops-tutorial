@@ -1,7 +1,7 @@
 data_dir = "{{ consul_data_directory }}"
 domain = "{{ consul_domain }}"
 
-retry_join = [{% for host in groups['consul_servers'] %}{{ hostvars[host].ansible_default_ipv4.address | to_json }}{% if not loop.last %}, {% endif %}{% endfor %}]
+retry_join = [{% for host in groups['consul_servers'] %}{{ hostvars[host].ansible_host | to_json }}{% if not loop.last %}, {% endif %}{% endfor %}]
 
 {% if inventory_hostname in groups['consul_servers'] %}
 bind_addr = "{{ ansible_host }}"

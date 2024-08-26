@@ -3,8 +3,10 @@ node_01
 
 [nomad_clients]
 node_01
+node_02
 
 [consul_servers]
 node_01
 
 [consul_clients]
+node_02

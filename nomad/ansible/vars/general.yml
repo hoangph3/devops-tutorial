@@ -1,2 +1,4 @@
 ---
 download_directory: /tmp
+http_proxy: ""
+https_proxy: "{{ http_proxy }}"

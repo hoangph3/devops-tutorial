@@ -1,4 +1,4 @@
-ansible_host: '172.16.53.1'
+ansible_host: '172.16.53.149'
 ansible_port: 22
 ansible_user: ''  # ssh username
 ansible_password: ''  # ssh password

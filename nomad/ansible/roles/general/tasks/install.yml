@@ -4,6 +4,10 @@
     unzip -o {{ download_directory }}/consul.zip -d {{ download_directory }}
     mv {{ download_directory }}/consul {{ consul_binary }}
     rm -rf {{ download_directory }}/consul.zip
+  environment:
+    - http_proxy: "{{ http_proxy }}"
+    - https_proxy: "{{ https_proxy }}"
+  when: consul_download
 
 - name: Download nomad binary
   shell: |
@@ -11,6 +15,10 @@
     unzip -o {{ download_directory }}/nomad.zip -d {{ download_directory }}
     mv {{ download_directory }}/nomad {{ nomad_binary }}
     rm -rf {{ download_directory }}/nomad.zip
+  environment:
+    - http_proxy: "{{ http_proxy }}"
+    - https_proxy: "{{ https_proxy }}"
+  when: nomad_download
 
 - name: Get consul & nomad version
   shell: |
